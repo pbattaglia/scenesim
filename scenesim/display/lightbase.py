@@ -1,9 +1,8 @@
 """ Class definition for LightBase. """
-
 from panda3d.core import Loader
 # from direct.showbase import Loader
 from libpanda import BitMask32
-import numpy as np
+from numpy import fromstring
 import os
 from pandac.PandaModules import (
     AmbientLight, Camera, Filename, FrameBufferProperties, GraphicsEngine,
@@ -11,8 +10,6 @@ from pandac.PandaModules import (
     PerspectiveLens, PointLight, RescaleNormalAttrib, Texture,
     WindowProperties)
 import sys
-#
-from pdb import set_trace as BP
 
 
 class LightBase(object):
@@ -63,10 +60,10 @@ class LightBase(object):
     @staticmethod
     def init_wp(window_type, size):
         """ Initial / default WindowProperties """
-        if window_type == 'onscreen':
+        if window_type == "onscreen":
             wp = WindowProperties.getDefault()
             wp.setSize(size[0], size[1])
-        elif window_type == 'offscreen':
+        elif window_type == "offscreen":
             wp = WindowProperties.size(size[0], size[1])
         return wp
 
@@ -82,10 +79,10 @@ class LightBase(object):
             raise ValueError("Size not available.")
 
         # Initialize WindowProperties
-        wp = self.init_wp('onscreen', size)
+        wp = self.init_wp("onscreen", size)
 
         # Create window
-        output = self.make_output('onscreen', name, sort, wp=wp,
+        output = self.make_output("onscreen", name, sort, wp=wp,
                                   xflags=xflags, host_out=host_out)
 
         # Handle failure to create window (returns None)
@@ -106,10 +103,10 @@ class LightBase(object):
             raise ValueError("Size not available.")
 
         # Initialize WindowProperties
-        wp = self.init_wp('offscreen', size)
+        wp = self.init_wp("offscreen", size)
 
         # Create the buffer
-        output = self.make_output('offscreen', name, sort, wp=wp,
+        output = self.make_output("offscreen", name, sort, wp=wp,
                                   xflags=xflags, host_out=host_out)
 
         # Handle case when offscreen buffer cannot be directly created
@@ -120,10 +117,10 @@ class LightBase(object):
 
             # Open an onscreen window first, just to get a GraphicsOutput
             # object which is needed to open an offscreen buffer.
-            dummywin = self.make_window(size, 'dummy_onscreen_win', sort,
+            dummywin = self.make_window(size, "dummy_onscreen_win", sort,
                                         xflags, host_out)
             # Now, make offscreen buffer through win
-            output = self.make_output('offscreen', name, sort, xflags=xflags,
+            output = self.make_output("offscreen", name, sort, xflags=xflags,
                                       host_out=dummywin)
 
             # Handle failure to create window (returns None)
@@ -152,7 +149,7 @@ class LightBase(object):
 
         # Input handling / defaults
         if name is None:
-            name = window_type + '_win'
+            name = window_type + "_win"
         if fbp is None:
             # Initialize FramebufferProperties
             fbp = self.init_fbp()
@@ -164,9 +161,9 @@ class LightBase(object):
             raise ValueError("Size not available in either wp or win.")
         flags = xflags | GraphicsPipe.BFFbPropsOptional
         # flags' window_type switch
-        if window_type == 'onscreen':
+        if window_type == "onscreen":
             flags = flags | GraphicsPipe.BFRequireWindow
-        elif window_type == 'offscreen':
+        elif window_type == "offscreen":
             flags = flags | GraphicsPipe.BFRefuseWindow
 
         # Make the window / buffer
@@ -285,7 +282,7 @@ class LightBase(object):
 
     def make_camera(self, output, sort=0, dr_dims=(0, 1, 0, 1),
                     aspect_ratio=None, clear_depth=False, clear_color=None,
-                    lens=None, cam_name='camera0', mask=None):
+                    lens=None, cam_name="camera0", mask=None):
         """
         Makes a new 3-d camera associated with the indicated window,
         and creates a display region in the indicated subrectangle.
@@ -306,7 +303,7 @@ class LightBase(object):
             # We make it a ModelNode with the PTLocal flag, so that a
             # wayward flatten operations won't attempt to mangle the
             # camera.
-            self.cameras = self.rootnode.attachNewNode(ModelNode('cameras'))
+            self.cameras = self.rootnode.attachNewNode(ModelNode("cameras"))
             self.cameras.node().setPreserveTransform(ModelNode.PTLocal)
 
         # Make a new Camera node.
@@ -363,16 +360,16 @@ class LightBase(object):
     @staticmethod
     def make_lights():
         """ Create one point light and an ambient light."""
-        lights = NodePath('lights')
+        lights = NodePath("lights")
 
         # Create point lights
-        plight = PointLight('plight1')
+        plight = PointLight("plight1")
         light = lights.attachNewNode(plight)
         light.setPos((3, -10, 2))
         light.lookAt(0, 0, 0)
 
         # Create ambient light
-        alight = AmbientLight('alight')
+        alight = AmbientLight("alight")
         alight.setColor((0.75, 0.75, 0.75, 1.0))
         lights.attachNewNode(alight)
 
@@ -383,7 +380,7 @@ class LightBase(object):
         Creates the rootnode scene graph, the primary scene graph for
         rendering 3-d geometry.
         """
-        self.rootnode = NodePath('rootnode')
+        self.rootnode = NodePath("rootnode")
         self.rootnode.setAttrib(RescaleNormalAttrib.makeDefault())
         self.rootnode.setTwoSided(0)
         self.backface_culling_enabled = 1
@@ -426,10 +423,10 @@ class LightBase(object):
         else:
             size = (tex.getXSize(), tex.getYSize())
             texdata = tex.getRamImage().getData()
-            arr = np.fromstring(texdata, 'u1')
+            arr = fromstring(texdata, "u1")
 
             if freshape:
-                arr = np.reshape(arr, list(size) + [-1])[:, :, [2, 1, 0, 3]]
+                arr = arr.reshape(list(size) + [-1])[:, :, [2, 1, 0, 3]]
 
         return arr
 
@@ -449,20 +446,20 @@ class LightBase(object):
             else:
                 f_success = output.write(filename)
         else:
-            raise TypeError('Unhandled output type: ' + type(output))
+            raise TypeError("Unhandled output type: " + type(output))
 
         return f_success
 
     def destroy(self):
         """ self.__exitfunc() calls this automatically """
         self.close_all_outputs()
-        if getattr(self, 'loader', None):
+        if getattr(self, "loader", None):
             self.loader.destroy()
             self.loader = None
-        if getattr(self, 'engine', None):
+        if getattr(self, "engine", None):
             self.engine.removeAllWindows()
             self.engine = None
-        if getattr(self, 'pipe', None):
+        if getattr(self, "pipe", None):
             self.pipe = None
 
     def __exitfunc(self):

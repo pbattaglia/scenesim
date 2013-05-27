@@ -2,4 +2,4 @@
 from scenesim.physics.bulletbase import BulletBase
 
 
-__all__ = ("BulletBase")
+__all__ = ("BulletBase",)

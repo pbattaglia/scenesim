@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """ Viewer for SSOs."""
 # Standard
+from pdb import set_trace as BP
 import sys
 # External
 from direct.showbase.ShowBase import ShowBase
@@ -12,8 +13,6 @@ from path import path
 # Project
 from scenesim.objects import GSO, PSO, SSO
 from scenesim.physics.bulletbase import BulletBase
-#
-from pdb import set_trace as BP
 
 
 class Viewer(ShowBase, object):
@@ -26,9 +25,9 @@ class Viewer(ShowBase, object):
         # Black background
         self.win.setClearColor((0.0, 0.0, 0.0, 1.0))
         # Set up lights.
-        self.lights = NodePath('lights')
+        self.lights = NodePath("lights")
         # Spotlight. Casts shadows.
-        slight = Spotlight('slight')
+        slight = Spotlight("slight")
         slight.setScene(self.render)
         slight.setShadowCaster(True, 2 ** 11, 2 ** 11)
         # Set shadow mask, so we can exclude objects from casting shadows
@@ -42,7 +41,7 @@ class Viewer(ShowBase, object):
         slnp.lookAt(0, 0, 0)
         self.render.setLight(slnp)
         # Ambient light.
-        alight = AmbientLight('alight')
+        alight = AmbientLight("alight")
         a = 0.75
         alight.setColor((a, a, a, 1.0))
         #alight.setColor((0.8, 0.8, 0.8, 1.0))
@@ -54,8 +53,8 @@ class Viewer(ShowBase, object):
         # Set antialiasing on
         self.render.setAntialias(AntialiasAttrib.MAuto)
         # Camera
-        self.camera_rot = self.render.attachNewNode('camera_rot')
-        self.cameras = self.camera_rot.attachNewNode('cameras')
+        self.camera_rot = self.render.attachNewNode("camera_rot")
+        self.cameras = self.camera_rot.attachNewNode("cameras")
         self.cameras.setPos(14, 32, 9.)
         self.look_at = self.render.attachNewNode("look_at")
         self.look_at.setPos(Point3(2, 0, 1))
@@ -71,7 +70,6 @@ class Viewer(ShowBase, object):
         self.sso = None
         self.ssos = []
         self.cache = None
-        # self.bbase = None
         self.scene = SSO("scene")
         self.scene.reparentTo(self.render)
         # Key callbacks.
@@ -100,7 +98,6 @@ class Viewer(ShowBase, object):
         # These are the key events that we will never ignore
         self.permanent_tasks = [task.getName()
                                 for task in self.taskMgr.getAllTasks()]
-        # LOAD PHYSICS
         self.start_time = -1
         self.old_elapsed = 0
 

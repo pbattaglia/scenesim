@@ -304,7 +304,7 @@ class PSO(SSO):
         self.clearTag("resource")
 
 
-class RSO(PSO):
+class RBSO(PSO):
     type_ = BulletRigidBodyNode
     _prop_tags = ("linear_velocity", "angular_velocity", "mass")
     _res_tags = ()

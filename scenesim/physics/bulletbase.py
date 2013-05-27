@@ -15,7 +15,7 @@ from panda3d.core import PythonCallbackObject, TransformState
 from pandac.PandaModules import NodePath
 # Project
 #
-from pdb import set_trace as BP
+# from pdb import set_trace as BP
 
 
 nan = float("nan")

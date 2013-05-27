@@ -6,12 +6,11 @@ from itertools import izip
 import random
 # External
 from libpanda import Mat4, Point3, Quat, TransformState, Vec3, Vec4
-from nose.tools import raises
 from panda3d.bullet import BulletBoxShape, BulletRigidBodyNode, BulletShape
 from pandac.PandaModules import GeomNode, ModelRoot, NodePath, PandaNode
 from path import path
 # Project
-from scenesim.objects import GSO, PSO, RSO, SSO
+from scenesim.objects import GSO, PSO, RBSO, SSO
 from scenesim.objects.pso import cast_c_float
 from scenesim.objects.sso import Cache
 
@@ -51,7 +50,7 @@ def test_gso():
 
 
 def test_rso():
-    obj = RSO("rso")
+    obj = RBSO("rso")
     assert isinstance(obj.node(), BulletRigidBodyNode)
 
 
@@ -105,21 +104,21 @@ def test_default():
 def test_prop_tags():
     sso = SSO("sso")
     gso = GSO("gso")
-    brso = RSO("pso")
+    brso = RBSO("pso")
     assert set(sso.prop_tags) == set(SSO._prop_tags)
     assert set(gso.prop_tags) == set(SSO._prop_tags + GSO._prop_tags)
     assert set(brso.prop_tags) == set(SSO._prop_tags + PSO._prop_tags +
-                                       RSO._prop_tags)
+                                       RBSO._prop_tags)
 
 
 def test_res_tags():
     sso = SSO("sso")
     gso = GSO("gso")
-    brso = RSO("pso")
+    brso = RBSO("pso")
     assert set(sso.res_tags) == set(SSO._res_tags)
     assert set(gso.res_tags) == set(SSO._res_tags + GSO._res_tags)
     assert set(brso.res_tags) == set(SSO._res_tags + PSO._res_tags +
-                                      RSO._res_tags)
+                                      RBSO._res_tags)
 
 
 def test_reads_dumps():
@@ -184,7 +183,7 @@ def test_init_resources_model_shape():
     gso.set_model("block.bam")
     gso.init_resources()
     gnodes = gso.descendants(depths=slice(1, None))
-    pso = RSO("bar")
+    pso = RBSO("bar")
     pso.set_shape("Box")
     pso.init_resources()
     assert any(isinstance(n.node(), resource_types) for n in gnodes)
@@ -197,7 +196,7 @@ def test_destroy_resources_model_shape():
     gso.init_resources()
     gso.destroy_resources()
     gnodes = gso.descendants(depths=slice(1, None))
-    pso = RSO("bar")
+    pso = RBSO("bar")
     pso.set_shape("Box")
     pso.init_resources()
     pso.destroy_resources()
@@ -363,7 +362,7 @@ def test_store_restore():
     assert sso.tree() == sso2.tree()
 
 
-## PSO, RSO
+## PSO, RBSO
 def test_cast_c_float():
     def f():
         return 1. / 9.
@@ -375,14 +374,14 @@ def test_cast_c_float():
 
 def test_pso_set_shape():
     shape = ("Box", (Vec3(4, 1, 7),), TransformState.makePos((2, 4, 6)))
-    obj = RSO("rso")
+    obj = RBSO("rso")
     obj.set_shape(shape)
     assert obj.getPythonTag("shape") == shape
 
 
 def test_pso_get_shape():
     shape = ("Box", (Vec3(4, 1, 7),), TransformState.makePos((2, 4, 6)))
-    obj = RSO("rso")
+    obj = RBSO("rso")
     obj.set_shape(shape)
     assert obj.get_shape() == shape
 
@@ -391,9 +390,9 @@ def test_pso_create_shape():
     ts1 = TransformState.makePos((1, 3, 5))
     ts2 = TransformState.makePos((2, 4, 6))
     par2 = (Vec3(4, 1, 7),)
-    obj0 = RSO("0")
-    obj1 = RSO("1")
-    obj2 = RSO("2")
+    obj0 = RBSO("0")
+    obj1 = RBSO("1")
+    obj2 = RBSO("2")
     obj0.set_shape("Box")
     obj1.set_shape(("Box", (), ts1))
     obj2.set_shape(("Box", par2, ts2))
@@ -415,7 +414,7 @@ def test_pso_create_shape():
 
 
 def test_pso_delete_shape():
-    obj = RSO("rso")
+    obj = RBSO("rso")
     obj.set_shape("Box")
     obj.create_shape()
     obj.delete_shape()
@@ -475,4 +474,3 @@ def test_gso_delete_model():
     gso.delete_model()
     nodes = gso.descendants()
     assert not any(isinstance(n.node(), resource_types) for n in nodes)
-    

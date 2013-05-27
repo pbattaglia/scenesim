@@ -2,4 +2,4 @@
 from scenesim.display.lightbase import LightBase
 
 
-__all__ = ["LightBase"]
+__all__ = ("LightBase",)
