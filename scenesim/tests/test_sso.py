@@ -57,43 +57,43 @@ def test_rso():
 def test_name_immutability():
     sso = SSO("foo")
     before = sso.read_prop()
-    before['name'] = "bar"
-    assert sso.read_prop()['name'] != before['name']
+    before["name"] = "bar"
+    assert sso.read_prop()["name"] != before["name"]
 
 
 def test_scale_immutability():
     sso = SSO("foo")
     before = sso.read_prop()
-    before['scale'][0] = 10
-    assert sso.read_prop()['scale'] != before['scale']
+    before["scale"][0] = 10
+    assert sso.read_prop()["scale"] != before["scale"]
 
 
 def test_quat_immutability():
     sso = SSO("foo")
     before = sso.read_prop()
-    before['quat'][1] = 0.55
-    assert sso.read_prop()['quat'] != before['quat']
+    before["quat"][1] = 0.55
+    assert sso.read_prop()["quat"] != before["quat"]
 
 
 def test_pos_immutability():
     sso = SSO("foo")
     before = sso.read_prop()
-    before['pos'][0] = 10
-    assert sso.read_prop()['pos'] != before['pos']
+    before["pos"][0] = 10
+    assert sso.read_prop()["pos"] != before["pos"]
 
 
 def test_model_immutability():
     sso = GSO("foo")
     before = sso.read_prop()
-    before['model'] = "sjkdfngasusulrbg;are"
-    assert sso.read_prop()['model'] != before['model']
+    before["model"] = "bar"
+    assert sso.read_prop()["model"] != before["model"]
 
 
 def test_shape_immutability():
     sso = PSO(BulletRigidBodyNode("foo"))
     before = sso.read_prop()
-    before['shape'] = "Sphere"
-    assert sso.read_prop()['shape'] != before['shape']
+    before["shape"] = "Sphere"
+    assert sso.read_prop()["shape"] != before["shape"]
 
 
 def test_default():
@@ -180,7 +180,7 @@ def test_apply_prop_read_prop_SSO():
 
 def test_init_resources_model_shape():
     gso = GSO("bar")
-    gso.set_model("block.bam")
+    gso.set_model("smiley.egg")
     gso.init_resources()
     gnodes = gso.descendants(depths=slice(1, None))
     pso = RBSO("bar")
@@ -192,7 +192,7 @@ def test_init_resources_model_shape():
 
 def test_destroy_resources_model_shape():
     gso = GSO("bar")
-    gso.set_model("block.bam")
+    gso.set_model("smiley.egg")
     gso.init_resources()
     gso.destroy_resources()
     gnodes = gso.descendants(depths=slice(1, None))
@@ -297,8 +297,8 @@ def test_build_tree():
 def test_store_restore_tree():
     sso = GSO("foo")
     sso2 = GSO("bar")
-    sso.set_model("block.bam")
-    sso2.set_model("block.bam")
+    sso.set_model("smiley.egg")
+    sso2.set_model("smiley.egg")
     sso2.reparentTo(sso)
     cache = sso.store_tree()
     sso3 = cache.restore()
@@ -333,8 +333,8 @@ def test_save_load_tree():
 def test_init_tree():
     sso = GSO("foo")
     sso2 = GSO("bar")
-    sso.set_model("block.bam")
-    sso2.set_model("block.bam")
+    sso.set_model("smiley.egg")
+    sso2.set_model("smiley.egg")
     sso2.reparentTo(sso)
     sso.init_tree()
     nodes = sso.descendants()
@@ -344,8 +344,8 @@ def test_init_tree():
 def test_destroy_tree():
     sso = GSO("foo")
     sso2 = GSO("bar")
-    sso.set_model("block.bam")
-    sso2.set_model("block.bam")
+    sso.set_model("smiley.egg")
+    sso2.set_model("smiley.egg")
     sso2.reparentTo(sso)
     nodes = sso.descendants()
     for n in nodes:
@@ -356,7 +356,7 @@ def test_destroy_tree():
 
 def test_store_restore():
     sso = GSO("foo")
-    sso.set_model("block.bam")
+    sso.set_model("smiley.egg")
     cache = Cache.store(sso)
     sso2 = cache.restore()
     assert sso.tree() == sso2.tree()

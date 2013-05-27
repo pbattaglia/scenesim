@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-""" Picker."""
+""" Picker: view and click objects in a scene."""
 # Standard
 # External
 from libpanda import Vec3, Vec4
@@ -13,7 +12,7 @@ from scenesim.objects import PSO
 
 
 class Picker(Viewer):
-    """ Viewer for SSOs."""
+    """ View and click objects in a scene."""
 
     def __init__(self):
         # Parent init.
