@@ -1,8 +1,10 @@
+SceneSim
+
 Create scenes and simulate their physics and graphics. 
-====
+----
 
 Requirements
-====
+----
 
 1. [Python] (www.python.org)
 
@@ -10,9 +12,4 @@ Requirements
 sure to get a very recent build -- May 6, 2013 or later.
 
 3. [path.py] (pypi.python.org/pypi/path.py)
-
-
-Install
-====
-
 
