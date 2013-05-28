@@ -266,7 +266,7 @@ class SSO(NodePath):
         if isinstance(F, file):
             pickle.dump(state, F)
         elif isinstance(F, str):
-            with open(F, "r") as fid:
+            with open(F, "w") as fid:
                 pickle.dump(state, fid)
 
     @classmethod
