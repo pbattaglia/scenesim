@@ -10,9 +10,9 @@ from panda3d.bullet import BulletBoxShape, BulletRigidBodyNode, BulletShape
 from pandac.PandaModules import GeomNode, ModelRoot, NodePath, PandaNode
 from path import path
 # Project
-from scenesim.objects import GSO, PSO, RBSO, SSO
-from scenesim.objects.pso import cast_c_float
-from scenesim.objects.sso import Cache
+from .. objects import GSO, PSO, RBSO, SSO
+from .. objects.pso import cast_c_float
+from .. objects.sso import Cache
 
 
 resource_types = (BulletShape, GeomNode, ModelRoot)
@@ -125,15 +125,15 @@ def test_reads_dumps():
     sso = SSO("foo")
     dump = sso.dumps()
     read = SSO.reads(dump)
-    assert (sso.read_prop(), sso.__class__) == read
+    assert (sso.__class__, sso.read_prop()) == read
 
 
 def test_loads_dumps():
     sso = SSO("foo")
     dump = sso.dumps()
     sso2 = SSO.loads(dump)
-    assert (sso.read_prop(), sso.__class__) == (sso2.read_prop(),
-                                                sso2.__class__)
+    assert (sso.__class__, sso.read_prop()) == (sso2.__class__,
+                                                sso2.read_prop())
 
 
 def test_read_dump():
@@ -143,7 +143,7 @@ def test_read_dump():
             sso.dump(fid)
         with pth.open() as fid:
             read = SSO.read(fid)
-    assert (sso.read_prop(), sso.__class__) == read
+    assert (sso.__class__, sso.read_prop()) == read
 
 
 def test_load_dump():
@@ -153,8 +153,8 @@ def test_load_dump():
             sso.dump(fid)
         with pth.open() as fid:
             sso2 = SSO.load(fid)
-    assert (sso.read_prop(), sso.__class__) == (sso2.read_prop(),
-                                                sso2.__class__)
+    assert (sso.__class__, sso.read_prop()) == (sso2.__class__,
+                                                sso2.read_prop())
 
 
 def test_apply_prop_read_prop_SSO():

@@ -1,11 +1,12 @@
 """ Basic objects."""
 # Standard
 from collections import Iterable
-from itertools import izip
 import cPickle as pickle
+from itertools import izip
 # External
 from battools.tools import combomethod
 from pandac.PandaModules import NodePath, NodePathCollection, PandaNode
+from path import path
 # Project
 #
 from pdb import set_trace as BP
@@ -256,34 +257,6 @@ class SSO(NodePath):
         node = self.build_tree(props, partial)
         return node
 
-    def save_tree(self, F):
-        """ Saves tree to file or path F."""
-        ssos, partial = self.tree()  # TODO: add type_ filter?
-        props = tuple(sso.read_prop() for sso in ssos)
-        types = tuple(sso.__class__ for sso in ssos)
-        state = (types, props, partial)
-        # Save to disk.
-        if isinstance(F, file):
-            pickle.dump(state, F)
-        elif isinstance(F, str):
-            with open(F, "w") as fid:
-                pickle.dump(state, fid)
-
-    @classmethod
-    def load_tree(cls, F):
-        """ Loads tree from file or path F."""
-        # Load from disk.
-        if not isinstance(F, file):
-            with open(F, "r") as fid:
-                # Load from disk.
-                types, props, partial = pickle.load(fid)
-        else:
-            types, props, partial = pickle.load(F)
-        ssos = tuple(type_(props=prop) for type_, prop in izip(types, props))
-        # Build the tree. node is the top.
-        top = cls.build_tree(ssos, partial)
-        return top
-
     def init_tree(self, tags=None):
         """ Inits this node tree's resources."""
         # Get all descendants.
@@ -300,23 +273,29 @@ class SSO(NodePath):
 
     @staticmethod
     def reads(serial):
-        """ Read pickled property string and return property dict."""
-        props, type_ = pickle.loads(serial)
-        return props, type_
+        """ Read type and property dict from pickled string."""
+        type_, props = pickle.loads(serial)
+        return type_, props
 
     @staticmethod
     def read(F):
-        """ Read pickled file containing property string and return
-        property dict."""
-        if isinstance(F, file):
-            props, type_ = pickle.load(F)
-        elif isinstance(F, str):
-            with open(F, "r") as fid:
-                props, type_ = pickle.load(fid)
-        return props, type_
+        """ Read type and property dict from pickled file."""
+        try:
+            f = path(F)
+        except TypeError:
+            if isinstance(F, file):
+                type_, props = pickle.load(F)
+            else:
+                raise TypeError("F is type %s, must be str, path or file" %
+                                type(F))
+        else:
+            with f.open("r") as fid:
+                type_, props = pickle.load(fid)
+        return type_, props
 
     @combomethod
-    def _load(combo, props, type_, other=None):
+    def _load(combo, type_, props, other=None):
+        """ Utility for actually loading an SSO."""
         if isinstance(combo, type):
             sso = type_(props=props, other=other)
         else:
@@ -327,33 +306,78 @@ class SSO(NodePath):
     @combomethod
     def loads(combo, serial, other=None):
         """ Load pickled property string and return sso. (combomethod)"""
-        props, type_ = combo.reads(serial)
-        sso = combo._load(props, type_, other=other)
+        type_, props = combo.reads(serial)
+        sso = combo._load(type_, props, other=other)
         return sso
 
     @combomethod
     def load(combo, F, other=None):
         """ Load pickled file containing property string and return
         sso. (combomethod)"""
-        props, type_ = combo.read(F)
-        sso = combo._load(props, type_, other=other)
+        type_, props = combo.read(F)
+        sso = combo._load(type_, props, other=other)
         return sso
 
     def dumps(self, other=None):
         """ Dump property into pickled string representation."""
-        state = (self.read_prop(other=other), self.__class__)
+        state = (self.__class__, self.read_prop(other=other))
         serial = pickle.dumps(state)
         return serial
 
     def dump(self, F, other=None):
         """ Dump property into a file F."""
-        state = (self.read_prop(other=other), self.__class__)
-        if isinstance(F, file):
-            pickle.dump(state, F)
-        elif isinstance(F, str):
-            with open(F, "w") as fid:
+        state = (self.__class__, self.read_prop(other=other))
+        try:
+            f = path(F)
+        except TypeError:
+            if isinstance(F, file):
+                pickle.dump(state, F)
+            else:
+                raise TypeError("F is type %s, must be str, path or file" %
+                                type(F))
+        else:
+            with f.open("w") as fid:
                 pickle.dump(state, fid)
 
+    def save_tree(self, F):
+        """ Saves tree to file or path F."""
+        ssos, partial = self.tree()  # TODO: add type_ filter?
+        props = tuple(sso.read_prop() for sso in ssos)
+        types = tuple(sso.__class__ for sso in ssos)
+        state = (types, props, partial)
+        # Save to disk.
+        try:
+            f = path(F)
+        except TypeError:
+            if isinstance(F, file):
+                pickle.dump(state, F)
+            else:
+                raise TypeError("F is type %s, must be str, path or file" %
+                                type(F))
+        else:
+            with f.open("w") as fid:
+                pickle.dump(state, fid)
+
+    @classmethod
+    def load_tree(cls, F):
+        """ Loads tree from file or path F."""
+        # Load from disk.
+        try:
+            f = path(F)
+        except TypeError:
+            if isinstance(F, file):
+                types, props, partial = pickle.load(F)
+            else:
+                raise TypeError("F is type %s, must be str, path or file" %
+                                type(F))
+        else:
+            with f.open("r") as fid:
+                types, props, partial = pickle.load(fid)
+        ssos = (cls._load(type_, prop) for type_, prop in izip(types, props))
+        # Build the tree. node is the top.
+        top = cls.build_tree(ssos, partial)
+        return top
+                
 
 class Cache(object):
     """ Stores a node tree's nodes, properties, and partial order,
