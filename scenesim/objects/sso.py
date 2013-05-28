@@ -1,21 +1,13 @@
-""" Basic objects."""
+""" Basic SceneSim objects."""
 # Standard
 from collections import Iterable
 import cPickle as pickle
 from itertools import izip
 # External
-from battools.tools import combomethod
 from pandac.PandaModules import NodePath, NodePathCollection, PandaNode
 from path import path
 # Project
-#
-from pdb import set_trace as BP
-
-
-# TODO: Make State class that stores state and handles pickling. Add
-# pickle support to SSO. Then replace save/load_tree() methods with
-# versions that just call pickle.dump/load on the node tree returned
-# by self.tree().
+from scenesim.lib import combomethod
 
 
 class SSO(NodePath):
@@ -377,7 +369,7 @@ class SSO(NodePath):
         # Build the tree. node is the top.
         top = cls.build_tree(ssos, partial)
         return top
-                
+
 
 class Cache(object):
     """ Stores a node tree's nodes, properties, and partial order,
