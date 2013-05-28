@@ -1,3 +1,0 @@
-[submodule "battools"]
-	path = battools
-	url = git@github.com:pbattaglia/battools.git
