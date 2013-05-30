@@ -239,12 +239,16 @@ class SSO(NodePath):
         npc.detach()
 
     @classmethod
-    def build_tree(cls, X, partial):
+    def build_tree(cls, X, partial, types=None):
         """ Input list of states/NodePaths and partial order, and
         construct a NodePath tree."""
         # Construct list of NodePaths, constructing them from states
         # if need be.
-        nodes = [x if isinstance(x, NodePath) else cls(props=x) for x in X]
+        if types:
+            nodes = [type_(x) if isinstance(x, NodePath) else type_(props=x)
+                     for x, type_ in izip(X, types)]
+        else:
+            nodes = [x if isinstance(x, NodePath) else cls(props=x) for x in X]
         # Connect the nodes according to partial. node is the top.
         node = cls.connect_tree(nodes, partial)
         return node
@@ -258,7 +262,7 @@ class SSO(NodePath):
     def copy(self):
         """ Copy a node tree and return new top node."""
         types, props, partial = self.state_prop()  # TODO: add type_ filter?
-        node = self.build_tree(props, partial)
+        node = self.build_tree(props, partial, types=types)
         return node
 
     def init_tree(self, tags=None):
