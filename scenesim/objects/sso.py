@@ -180,8 +180,9 @@ class SSO(NodePath):
         else:
             rng = depths
         # Get all descendants.
-        ssos = [self.cast(n) for n in self.findAllMatches("**")
-                if self._sso_filter(n, type_) and n.getNumNodes() - 1 in rng]
+        ssos = tuple(self.cast(n) for n in self.findAllMatches("**")
+                     if self._sso_filter(n, type_) and
+                     n.getNumNodes() - 1 in rng)
         return ssos
 
     def tree(self, type_=None):
@@ -189,18 +190,31 @@ class SSO(NodePath):
         nodes and partial order tree structure. Breadth-first."""
         nodes = self.descendants(type_=type_)
         nidx = {n: i for i, n in enumerate(nodes)}
-        partial = [nidx[self.cast(n.getParent())] + 1
-                   if n.getKey() != self.getKey() else 0 for n in nodes]
+        partial = tuple(nidx[self.cast(n.getParent())] + 1
+                        if n.getKey() != self.getKey() else 0 for n in nodes)
         return nodes, partial
 
     def tree_prop(self, type_=None):
         """ Input node and return the property dictionaries and a partial
         ordering of its descendants."""
-        # Get tree: descendants and partial order.
         nodes, partial = self.tree(type_=type_)
         # Get the props.
-        props = [SSO.cast(n).read_prop() for n in nodes]
+        props = tuple(SSO.cast(n).read_prop() for n in nodes)
         return props, partial
+
+    def state(self, type_=None):
+        """ Input node and return the state: type_s, nodes and partial
+        ordering of its descendants."""
+        nodes, partial = self.tree(type_=type_)
+        types = tuple(node.__class__ for node in nodes)
+        return types, nodes, partial
+
+    def state_prop(self, type_=None):
+        """ Input node and return the state: type_s, property dicts,
+        and partial ordering of its descendants."""
+        types, nodes, partial = self.state(type_=type_)
+        props = tuple(node.read_prop() for node in nodes)
+        return types, props, partial
 
     @classmethod
     def connect_tree(cls, nodes, partial, wrt=False):
@@ -243,9 +257,7 @@ class SSO(NodePath):
 
     def copy(self):
         """ Copy a node tree and return new top node."""
-        # Get props and partial.
-        props, partial = self.tree_prop()  # TODO: add type_ filter?
-        # Build the tree. node is the top.
+        types, props, partial = self.state_prop()  # TODO: add type_ filter?
         node = self.build_tree(props, partial)
         return node
 
@@ -333,10 +345,7 @@ class SSO(NodePath):
 
     def save_tree(self, F):
         """ Saves tree to file or path F."""
-        ssos, partial = self.tree()  # TODO: add type_ filter?
-        props = tuple(sso.read_prop() for sso in ssos)
-        types = tuple(sso.__class__ for sso in ssos)
-        state = (types, props, partial)
+        state = self.state_prop()  # TODO: add type_ filter?
         # Save to disk.
         try:
             f = path(F)
