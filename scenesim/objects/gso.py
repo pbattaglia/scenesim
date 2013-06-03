@@ -45,7 +45,7 @@ class GSO(SSO):
         descendant nodes with tag 'model'."""
         try:
             # Load the model from disk.
-            node = self.loader.loadSync(self.get_model())
+            node = self.loader.load_model(self.get_model())
         except NameError:
             # Probably won't enter here, but if so it needs to be debugged.
             BP()
