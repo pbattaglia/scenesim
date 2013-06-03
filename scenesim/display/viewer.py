@@ -238,9 +238,6 @@ class Viewer(ShowBase, object):
 
     def bp(self, task):
         """ Task: break."""
-        C = self.sso
-        B = [x for x in self.sso.getChildren()]
-        G = [x.getChildren()[0] for x in B if len(x.getChildren()) > 0]
         BP()
         return task.done
 
