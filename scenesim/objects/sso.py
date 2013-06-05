@@ -2,6 +2,7 @@
 # Standard
 from collections import Iterable
 import cPickle as pickle
+from functools import partial
 from itertools import izip
 # External
 from pandac.PandaModules import NodePath, NodePathCollection, PandaNode
@@ -162,12 +163,35 @@ class SSO(NodePath):
                     pass
 
     @staticmethod
-    def _sso_filter(node, type_):
-        """ Returns True if node's python tag is subclass of type_."""
-        t = node.getPythonTag("sso")
-        return type_ is None or isinstance(t, type) and issubclass(t, type_)
+    def _has_type(type_, node):
+        """ Returns True if `node`'s sso type is subclass of element
+        in `type_`."""
+        nt = node.getPythonTag("sso")
+        return type_ is None or isinstance(nt, type) and issubclass(nt, type_)
 
-    def descendants(self, depths=slice(None), type_=None):
+    @staticmethod
+    def _has_name(names, node):
+        """ Returns True if `node`'s name starts with element in `names`."""
+        return names is None or any(node.getName().startswith(name)
+                                    for name in names)
+
+    @classmethod
+    def _filter(cls, node, type_, names):
+        """ Returns True if node passes type and name filters."""
+        if names is not None and isinstance(names, str):
+            names = (names,)
+        filts = (partial(cls._has_type, type_), partial(cls._has_name, names))
+        return all(filt(node) for filt in filts)
+
+    @classmethod
+    def filter(cls, nodes, type_=None, names=None):
+        """ Filters out nodes whose sso type_ are not elements of
+        `type_` or do not start with an element of `names`."""
+        if not isinstance(nodes, Iterable):
+            nodes = (nodes,)
+        return tuple(n for n in nodes if cls._filter(n, type_, names))
+
+    def descendants(self, depths=slice(None), type_=None, names=None):
         """ Returns a list of descendants of this node. All if 'depth' is
         None, down to 'depths' (if int), only at 'depth' levels (if
         Iterable), or in a range (if slice)."""
@@ -179,10 +203,10 @@ class SSO(NodePath):
             rng = xrange(depths + 1)
         else:
             rng = depths
-        # Get all descendants.
-        ssos = tuple(self.cast(n) for n in self.findAllMatches("**")
-                     if self._sso_filter(n, type_) and
-                     n.getNumNodes() - 1 in rng)
+        # Get all descendants. Filter type_ and names.
+        ssos = [self.cast(n) for n in self.findAllMatches("**")
+                if self._filter(n, type_, names) and
+                n.getNumNodes() - 1 in rng]
         return ssos
 
     def tree(self, type_=None):
@@ -190,37 +214,37 @@ class SSO(NodePath):
         nodes and partial order tree structure. Breadth-first."""
         nodes = self.descendants(type_=type_)
         nidx = {n: i for i, n in enumerate(nodes)}
-        partial = tuple(nidx[self.cast(n.getParent())] + 1
-                        if n.getKey() != self.getKey() else 0 for n in nodes)
-        return nodes, partial
+        porder = tuple(nidx[self.cast(n.getParent())] + 1
+                       if n.getKey() != self.getKey() else 0 for n in nodes)
+        return nodes, porder
 
     def tree_prop(self, type_=None):
         """ Input node and return the property dictionaries and a partial
         ordering of its descendants."""
-        nodes, partial = self.tree(type_=type_)
+        nodes, porder = self.tree(type_=type_)
         # Get the props.
         props = tuple(SSO.cast(n).read_prop() for n in nodes)
-        return props, partial
+        return props, porder
 
     def state(self, type_=None):
         """ Input node and return the state: type_s, nodes and partial
         ordering of its descendants."""
-        nodes, partial = self.tree(type_=type_)
+        nodes, porder = self.tree(type_=type_)
         types = tuple(node.__class__ for node in nodes)
-        return types, nodes, partial
+        return types, nodes, porder
 
     def state_prop(self, type_=None):
         """ Input node and return the state: type_s, property dicts,
         and partial ordering of its descendants."""
-        types, nodes, partial = self.state(type_=type_)
+        types, nodes, porder = self.state(type_=type_)
         props = tuple(node.read_prop() for node in nodes)
-        return types, props, partial
+        return types, props, porder
 
     @classmethod
-    def connect_tree(cls, nodes, partial, wrt=False):
+    def connect_tree(cls, nodes, porder, wrt=False):
         """ Connect up a tree by reparenting nodes according to
-        partial. Return the top node."""
-        for n, p in zip(nodes, partial):
+        `porder`. Return the top node."""
+        for n, p in zip(nodes, porder):
             if p > 0:
                 if wrt:
                     n.wrtReparentTo(nodes[p - 1])
@@ -232,14 +256,14 @@ class SSO(NodePath):
 
     def disconnect_tree(self, wrt=False):
         """ Disconnect a tree. wrt keeps state intact."""
-        nodes, partial = self.tree()  # TODO: add type_ filter?
+        nodes, porder = self.tree()  # TODO: add type_ filter?
         npc = NodePathCollection(nodes)
         if wrt:
             npc.wrtReparentTo(SSO("disconnected_top"))
         npc.detach()
 
     @classmethod
-    def build_tree(cls, X, partial, types=None):
+    def build_tree(cls, X, porder, types=None):
         """ Input list of states/NodePaths and partial order, and
         construct a NodePath tree."""
         # Construct list of NodePaths, constructing them from states
@@ -249,8 +273,8 @@ class SSO(NodePath):
                      for x, type_ in izip(X, types)]
         else:
             nodes = [x if isinstance(x, NodePath) else cls(props=x) for x in X]
-        # Connect the nodes according to partial. node is the top.
-        node = cls.connect_tree(nodes, partial)
+        # Connect the nodes according to `porder`. node is the top.
+        node = cls.connect_tree(nodes, porder)
         return node
 
     def store_tree(self):
@@ -261,8 +285,8 @@ class SSO(NodePath):
 
     def copy(self):
         """ Copy a node tree and return new top node."""
-        types, props, partial = self.state_prop()  # TODO: add type_ filter?
-        node = self.build_tree(props, partial, types=types)
+        types, props, porder = self.state_prop()  # TODO: add type_ filter?
+        node = self.build_tree(props, porder, types=types)
         return node
 
     def init_tree(self, tags=None):
@@ -371,16 +395,16 @@ class SSO(NodePath):
             f = path(F)
         except TypeError:
             if isinstance(F, file):
-                types, props, partial = pickle.load(F)
+                types, props, porder = pickle.load(F)
             else:
                 raise TypeError("F is type %s, must be str, path or file" %
                                 type(F))
         else:
             with f.open("r") as fid:
-                types, props, partial = pickle.load(fid)
+                types, props, porder = pickle.load(fid)
         ssos = (cls._load(type_, prop) for type_, prop in izip(types, props))
         # Build the tree. node is the top.
-        top = cls.build_tree(ssos, partial)
+        top = cls.build_tree(ssos, porder)
         return top
 
 
@@ -389,9 +413,9 @@ class Cache(object):
     which can then be restored later."""
 
     def __init__(self):
-        self.nodes = []
-        self.props = []
-        self.partial = []
+        self._nodes = []
+        self._props = []
+        self._porder = []
 
     @classmethod
     def store(cls, node):
@@ -399,10 +423,10 @@ class Cache(object):
         that can be restored."""
         self = cls()
         # Get the nodes and partial.
-        self.nodes, self.partial = SSO(node).tree(type_=SSO)
+        self._nodes, self._porder = SSO(node).tree(type_=SSO)
         # Build the cache. The keys are the node names and the values
         # are the nodes and props.
-        self.props = [node.read_prop() for node in self.nodes]
+        self._props = [node.read_prop() for node in self._nodes]
         return self
 
     def restore(self):
@@ -410,7 +434,7 @@ class Cache(object):
         restore the node props."""
         # Iterate over each node key in the cache dict, setting the node
         # and its tag to the prop value.
-        for node, props in izip(self.nodes, self.props):
+        for node, props in izip(self._nodes, self._props):
             node.apply_prop(props)
-        top = SSO.connect_tree(self.nodes, self.partial)
+        top = SSO.connect_tree(self._nodes, self._porder)
         return top
