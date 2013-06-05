@@ -333,3 +333,54 @@ class RBSO(PSO):
     @wraps(type_.get_angular_velocity, assigned=("__name__", "__doc__"))
     def get_angular_velocity(self):
         return self.node().get_angular_velocity()
+
+
+class RBSO(PSO):
+    """ PSO subclass for `BulletRigidBodyNode`s."""
+
+    type_ = BulletRigidBodyNode
+    _prop_tags = ("linear_velocity", "angular_velocity", "mass")
+    _res_tags = ()
+
+    @wraps(type_.set_mass, assigned=("__name__", "__doc__"))
+    def set_mass(self, mass):
+        self.node().set_mass(mass)
+
+    @cast_c_float
+    @wraps(type_.get_mass, assigned=("__name__", "__doc__"))
+    def get_mass(self):
+        return self.node().get_mass()
+
+    @wraps(type_.set_linear_velocity, assigned=("__name__", "__doc__"))
+    def set_linear_velocity(self, linear_velocity):
+        self.node().set_linear_velocity(linear_velocity)
+
+    @wraps(type_.get_linear_velocity, assigned=("__name__", "__doc__"))
+    def get_linear_velocity(self):
+        return self.node().get_linear_velocity()
+
+    @wraps(type_.set_angular_velocity, assigned=("__name__", "__doc__"))
+    def set_angular_velocity(self, angular_velocity):
+        self.node().set_angular_velocity(angular_velocity)
+
+    @wraps(type_.get_angular_velocity, assigned=("__name__", "__doc__"))
+    def get_angular_velocity(self):
+        return self.node().get_angular_velocity()
+
+
+class GHSO(PSO):
+    """ PSO subclass for `BulletGhostNode`s."""
+
+    type_ = BulletGhostNode
+
+    @wraps(type_.get_num_overlapping_nodes, assigned=("__name__", "__doc__"))
+    def get_num_overlapping_nodes(self):
+        return self.node().get_num_overlapping_nodes()
+
+    @wraps(type_.get_overlapping_node, assigned=("__name__", "__doc__"))
+    def get_overlapping_node(self):
+        return self.node().get_overlapping_node()
+
+    @wraps(type_.get_overlapping_nodes, assigned=("__name__", "__doc__"))
+    def get_overlapping_nodes(self):
+        return self.node().get_overlapping_nodes()
