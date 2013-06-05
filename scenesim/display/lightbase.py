@@ -27,6 +27,8 @@ class Loader(object):
     texture_loader = TexturePool
     load_model = panda_loader.loadSync
     load_texture = texture_loader.loadTexture
+    loadSync = load_model
+    loadModel = load_model    
 
 
 class LightBase(object):
