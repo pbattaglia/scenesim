@@ -1,8 +1,8 @@
 """ BulletBase interfaces with Panda3d's Bullet module."""
 # Standard
-from collections import Iterable
+from collections import Iterable, defaultdict
 from contextlib import contextmanager
-from functools import wraps
+from functools import update_wrapper
 from itertools import combinations, izip
 from math import isnan, sqrt
 # External
@@ -23,6 +23,91 @@ nan = float("nan")
 
 class BulletBaseError(Exception):
     pass
+
+
+class Contact(object):
+
+    def __init__(self, contact_result):
+        self._contact_result = contact_result
+        self._N = None
+        self._points = None
+
+    @property
+    def N(self):
+        if self._N is None:
+            self._N = self._contact_result.getNumContacts()
+        return self._N
+
+    @property
+    def points(self):
+        if self._points is None:
+            self._points = []
+            for contact in self._contact_result.getContacts():
+                mpoint = contact.getManifoldPoint()
+                pa = mpoint.getPositionWorldOnA()
+                pb = mpoint.getPositionWorldOnB()
+                self._points.append((pa + pb) / 2.)
+        return self._points
+
+
+class ContactMonitor(object):
+    """ Monitors contacts between bodies."""
+
+    def __init__(self, world, bodies):
+        self.world = world
+        self.bodies = bodies
+        self.n_bodies = len(bodies)
+        self.reset()
+
+    def reset(self):
+        self._pairs = None
+        self._contacts = None
+        self._points = None
+        self._mtx = None
+        self._N = None
+
+    def _detect(self, a, b):
+        return Contact(self.world.contactTestPair(a.node(), b.node()))
+
+    @property
+    def pairs(self):
+        """ Detects contacts between `self.bodies`."""
+        if self._pairs is None:
+            pairs = combinations(enumerate(self.bodies), 2)
+            self._pairs = defaultdict()
+            for (i, a), (j, b) in pairs:
+                contact = self._detect(a, b)
+                self._pairs[i, j] = contact
+                self._pairs[j, i] = contact
+        return self._pairs
+
+    @property
+    def contacts(self):
+        if self._contacts is None:
+            self._contacts = sorted(((i, j), c)
+                                    for (i, j), c in self.pairs.iteritems()
+                                    if c.N > 0 and i < j)
+        return self._contacts
+
+    @property
+    def points(self):
+        if self._points is None:
+            self._points = [((i, j), c.points) for (i, j), c in self.contacts]
+        return self._points
+
+    @property
+    def matrix(self):
+        if self._mtx is None:
+            self._mtx = np.zeros([self.n_bodies] * 2, dtype="i")
+            for (i, j), contact in self.contacts:
+                self._mtx[i, j] = contact.N
+        return self._mtx
+
+    @property
+    def N(self):
+        if self._N is None:
+            self._N = len(self.contacts)
+        return self._N
 
 
 class CollisionMonitor(object):
@@ -99,10 +184,10 @@ class CollisionMonitor(object):
         """ This is for Panda3d 1.8, because it doesn't have the
         contact callback methods."""
         if not self.use_callback:
-            detect = lambda a, b: self.world.contactTestPair(
-                a, b).getNumContacts()
+            def detect(a, b):
+                return self.world.contactTestPair(a, b).getNumContacts() > 0
             n = sum(detect(a, b) for a, b in combinations(self.bodies, 2))
-            self.__iadd__(n / 2)
+            self += n
 
 
 class JointManager(dict):
