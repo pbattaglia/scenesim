@@ -237,24 +237,20 @@ class PSO(SSO):
     _prop_tags = ("friction", "restitution", "shape")
     _res_tags = ("shape",)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs):               
         # Converts args so they're appropriate for self.type_.
         if len(args) == 0:
             args = ("",)
-        new_args = []
-        for arg in args:
-            if isinstance(arg, self.type_):
-                new_arg = arg
-            elif hasattr(arg, "node"):
-                new_arg = arg.node()
-            elif isinstance(arg, str):
-                new_arg = self.type_(arg)
-            else:
-                raise TypeError("Unhandled argument type: %s" % type(arg))
-            new_args.append(new_arg)
+        if isinstance(args[0], str):
+            args = (self.type_(args[0]),) + args[1:]
+            tag = self.__class__
+        else:
+            tag = None
         ## Using super fails, probably because NodePath is a C++ class.
         # super(PSO, self).__init__(self, *new_args, **kwargs)
-        SSO.__init__(self, *new_args, **kwargs)
+        SSO.__init__(self, *args, **kwargs)
+        if tag:
+            self.setPythonTag("sso", tag)           
 
     @wraps(type_.set_friction, assigned=("__name__", "__doc__"))
     def set_friction(self, friction):

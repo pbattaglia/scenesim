@@ -9,6 +9,8 @@ from pandac.PandaModules import NodePath, NodePathCollection, PandaNode
 from path import path
 # Project
 from scenesim.lib import combomethod
+#
+from pdb import set_trace as BP
 
 
 class SSO(NodePath):
@@ -24,21 +26,30 @@ class SSO(NodePath):
         if len(args) == 0:
             args = ("",)
         super(SSO, self).__init__(*args, **kwargs)
-        self.setPythonTag("sso", self.__class__)
+        if isinstance(args[0], str):
+            self.setPythonTag("sso", self.__class__)
         self.apply_prop(props, other=other)
+
+    @classmethod
+    def cast(cls, node):
+        """ Return a node casted to this class type, and set its
+        python tag."""
+        node.setPythonTag("sso", cls)
+        return cls(node)
+
+    @classmethod
+    def from_tag(cls, node):
+        """ Return a node whose type is that which is contained in its
+        python tag."""
+        obj = (node.getPythonTag("sso")(node)
+               if node.hasPythonTag("sso") else cls(node))
+        return obj
 
     @classmethod
     def default(cls):
         """ Gets a property dictionary with default values."""
         sso = cls()
         return sso.read_prop()
-
-    @classmethod
-    def cast(cls, node):
-        """ Cast node to type contained in its python tag."""
-        sso = (node.getPythonTag("sso")(node)
-               if node.hasPythonTag("sso") else cls(node))
-        return sso
 
     @property
     def prop_tags(self):
@@ -203,40 +214,42 @@ class SSO(NodePath):
             rng = xrange(depths + 1)
         else:
             rng = depths
-        # Get all descendants. Filter type_ and names.
-        ssos = [self.cast(n) for n in self.findAllMatches("**")
-                if self._filter(n, type_, names) and
-                n.getNumNodes() - 1 in rng]
-        return ssos
 
-    def tree(self, type_=None):
+        # Get all descendants. Filter type_ and names.
+        dsc = [n for n in (self.from_tag(node)
+                           for node in self.findAllMatches("**"))
+               if self._filter(n, type_, names) and n.getNumNodes() - 1 in rng]
+        return dsc
+
+    def tree(self):
         """ Non-recursive descendant tree getter. Outputs the list of
         nodes and partial order tree structure. Breadth-first."""
-        nodes = self.descendants(type_=type_)
-        nidx = {n: i for i, n in enumerate(nodes)}
-        porder = tuple(nidx[self.cast(n.getParent())] + 1
-                       if n.getKey() != self.getKey() else 0 for n in nodes)
+        self_key = self.getKey()
+        nodes = self.descendants()
+        nidx = {n.getKey(): i for i, n in enumerate(nodes)}
+        porder = tuple(nidx[n.getParent().getKey()] + 1
+                       if n.getKey() != self_key else 0 for n in nodes)
         return nodes, porder
 
-    def tree_prop(self, type_=None):
+    def tree_prop(self):
         """ Input node and return the property dictionaries and a partial
         ordering of its descendants."""
-        nodes, porder = self.tree(type_=type_)
+        nodes, porder = self.tree()
         # Get the props.
-        props = tuple(SSO.cast(n).read_prop() for n in nodes)
+        props = tuple(n.read_prop() for n in nodes)
         return props, porder
 
-    def state(self, type_=None):
+    def state(self):
         """ Input node and return the state: type_s, nodes and partial
         ordering of its descendants."""
-        nodes, porder = self.tree(type_=type_)
+        nodes, porder = self.tree()
         types = tuple(node.__class__ for node in nodes)
         return types, nodes, porder
 
-    def state_prop(self, type_=None):
+    def state_prop(self):
         """ Input node and return the state: type_s, property dicts,
         and partial ordering of its descendants."""
-        types, nodes, porder = self.state(type_=type_)
+        types, nodes, porder = self.state()
         props = tuple(node.read_prop() for node in nodes)
         return types, props, porder
 
@@ -251,7 +264,7 @@ class SSO(NodePath):
                 else:
                     n.reparentTo(nodes[p - 1])
         # Top node.
-        top = cls.cast(nodes[0].getTop())
+        top = cls.from_tag(nodes[0].getTop())
         return top
 
     def disconnect_tree(self, wrt=False):
@@ -303,6 +316,27 @@ class SSO(NodePath):
         for n in nodes:
             n.destroy_resources(tags=tags)
 
+    def dumps(self, other=None):
+        """ Dump property into pickled string representation."""
+        state = (self.__class__, self.read_prop(other=other))
+        serial = pickle.dumps(state)
+        return serial
+
+    def dump(self, F, other=None):
+        """ Dump property into a file F."""
+        state = (self.__class__, self.read_prop(other=other))
+        try:
+            f = path(F)
+        except TypeError:
+            if isinstance(F, file):
+                pickle.dump(state, F)
+            else:
+                raise TypeError("F is type %s, must be str, path or file" %
+                                type(F))
+        else:
+            with f.open("w") as fid:
+                pickle.dump(state, fid)
+
     @staticmethod
     def reads(serial):
         """ Read type and property dict from pickled string."""
@@ -331,7 +365,7 @@ class SSO(NodePath):
         if isinstance(combo, type):
             sso = type_(props=props, other=other)
         else:
-            sso = type_(combo)
+            sso = type_.cast(combo)
             sso.apply_prop(props, other=other)
         return sso
 
@@ -349,27 +383,6 @@ class SSO(NodePath):
         type_, props = combo.read(F)
         sso = combo._load(type_, props, other=other)
         return sso
-
-    def dumps(self, other=None):
-        """ Dump property into pickled string representation."""
-        state = (self.__class__, self.read_prop(other=other))
-        serial = pickle.dumps(state)
-        return serial
-
-    def dump(self, F, other=None):
-        """ Dump property into a file F."""
-        state = (self.__class__, self.read_prop(other=other))
-        try:
-            f = path(F)
-        except TypeError:
-            if isinstance(F, file):
-                pickle.dump(state, F)
-            else:
-                raise TypeError("F is type %s, must be str, path or file" %
-                                type(F))
-        else:
-            with f.open("w") as fid:
-                pickle.dump(state, fid)
 
     def save_tree(self, F):
         """ Saves tree to file or path F."""
@@ -423,10 +436,10 @@ class Cache(object):
         that can be restored."""
         self = cls()
         # Get the nodes and partial.
-        self._nodes, self._porder = SSO(node).tree(type_=SSO)
+        self._nodes, self._porder = node.tree()
         # Build the cache. The keys are the node names and the values
         # are the nodes and props.
-        self._props = [node.read_prop() for node in self._nodes]
+        self._props = [SSO.from_tag(node).read_prop() for node in self._nodes]
         return self
 
     def restore(self):
