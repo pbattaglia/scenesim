@@ -10,9 +10,9 @@ from panda3d.bullet import BulletBoxShape, BulletRigidBodyNode, BulletShape
 from pandac.PandaModules import GeomNode, ModelRoot, NodePath, PandaNode
 from path import path
 # Project
-from .. objects.gso import GSO
-from .. objects.pso import GHSO, PSO, RBSO, cast_c_float
-from .. objects.sso import Cache, SSO
+from scenesim.objects.gso import GSO
+from scenesim.objects.pso import GHSO, PSO, RBSO, cast_c_float
+from scenesim.objects.sso import Cache, SSO
 
 
 resource_types = (BulletShape, GeomNode, ModelRoot)
@@ -49,9 +49,17 @@ def test_gso():
     assert isinstance(obj.node(), PandaNode)
 
 
-def test_rso():
-    obj = RBSO("rso")
+def test_rbso():
+    obj = RBSO("rbso")
     assert isinstance(obj.node(), BulletRigidBodyNode)
+
+
+def test_init():
+    np = NodePath("np")
+    np.setPythonTag("sso", GSO)
+    npsso = SSO(np)
+    assert isinstance(npsso, NodePath)
+    assert isinstance(npsso, SSO)
 
 
 def test_name_immutability():
@@ -206,7 +214,8 @@ def test_destroy_resources_model_shape():
 
 def test_descendants():
     n = 8
-    ssos = [SSO(str(i)) for i in xrange(n)]
+    types = (SSO, SSO, SSO, SSO, RBSO, RBSO, RBSO, GSO)
+    ssos = [type_.cast(type_(str(i))) for i, type_ in enumerate(types)]
     partial = [0, 1, 1, 2, 3, 3, 5, 6]
     for c, p in izip(ssos, partial):
         if p > 0:
@@ -214,20 +223,41 @@ def test_descendants():
     assert n == len(ssos[0].descendants())
     assert 6 == len(ssos[0].descendants(depths=2))
     assert 4 == len(ssos[0].descendants(depths=[1, 3]))
+    assert 8 == len(ssos[0].descendants(type_=SSO))
+    assert 1 == len(ssos[0].descendants(type_=GSO))
+    assert 2 == len(ssos[0].descendants(depths=slice(1, 3), type_=RBSO))
 
 
 def test_cast():
-    np = NodePath("np")
-    np2 = NodePath("np2")
-    np2.setPythonTag("sso", PSO)
-    sso = SSO("sso")
-    gso = GSO("gso")
-    assert isinstance(SSO.cast(np), NodePath)
-    assert isinstance(SSO.cast(np2), PSO)
-    assert isinstance(SSO.cast(sso), SSO)
-    assert isinstance(SSO.cast(gso), GSO)
-    gso.reparentTo(sso)
-    assert isinstance(SSO.cast(gso.getTop()), SSO)
+    sso = SSO.cast(NodePath("sso"))
+    gso = GSO.cast(NodePath("gso"))
+    pso = PSO.cast(NodePath("pso"))
+    ghso = GHSO.cast(NodePath("ghso"))
+    rbso = RBSO.cast(NodePath("rbso"))
+    assert isinstance(sso, NodePath)
+    assert isinstance(sso, SSO)
+    assert isinstance(gso, NodePath)
+    assert isinstance(gso, SSO)
+    assert isinstance(gso, GSO)
+    assert isinstance(ghso, NodePath)
+    assert isinstance(ghso, SSO)
+    assert isinstance(ghso, PSO)
+    assert isinstance(ghso, GHSO)
+    assert isinstance(rbso, NodePath)
+    assert isinstance(rbso, SSO)
+    assert isinstance(rbso, PSO)
+    assert isinstance(rbso, RBSO)
+
+
+def test_from_tag():
+    np = NodePath("sso")
+    np.setPythonTag("sso", SSO)
+    np2 = NodePath("gso")
+    np2.setPythonTag("sso", GSO)
+    assert not isinstance(np, SSO)
+    assert not isinstance(np2, GSO)
+    assert isinstance(SSO.from_tag(np), SSO)
+    assert isinstance(GSO.from_tag(np2), GSO)
 
 
 def test_tree():
