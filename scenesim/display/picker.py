@@ -6,8 +6,8 @@ from pandac.PandaModules import GeomNode, RenderModeAttrib
 from pandac.PandaModules import (CollisionHandlerQueue, CollisionNode,
                                  CollisionRay, CollisionTraverser)
 # Project
-from scenesim.display import Viewer
-from scenesim.objects import PSO
+from scenesim.display.viewer import Viewer
+from scenesim.objects.pso import PSO
 from scenesim.physics.bulletbase import JointManager
 
 

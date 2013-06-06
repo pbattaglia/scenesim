@@ -2,7 +2,7 @@
 # Standard
 from collections import Iterable
 from contextlib import contextmanager
-from functools import update_wrapper
+from functools import wraps
 from itertools import combinations, izip
 from math import isnan, sqrt
 # External
@@ -15,7 +15,7 @@ from panda3d.core import PythonCallbackObject, TransformState
 from pandac.PandaModules import NodePath
 # Project
 #
-# from pdb import set_trace as BP
+from pdb import set_trace as BP
 
 
 nan = float("nan")
@@ -239,7 +239,7 @@ class BulletBase(object):
         debug_node = BulletDebugNode('Debug')
         debug_node.showWireframe(True)
         debug_node.showConstraints(True)
-        debug_node.showBoundingBoxes(False)
+        debug_node.showBoundingBoxes(True)
         debug_node.showNormals(True)
         self.world.setDebugNode(debug_node)
         return debug_node
@@ -539,23 +539,10 @@ class BulletBase(object):
         return update_wrapper(func0, func)
 
     @staticmethod
-    def add_ghostnode(func0):
-        """ Decorator. Adds a child ghostnode to a node as a
-        workaround for the ghost-static node collision detection
-        problem.
-
-        @BulletBase.add_ghostnode
-        def make_my_ghostnode(params):
-            print "do stuff"
-            return node
-
-        """
-        def func(*args, **kwargs):
-            # Create node using func0.
-            node = func0(*args, **kwargs)
-            # Create associated ghost node and reparent to the node.
-            ghostname = "%s-ghost" % node.getName()
-            ghost = BulletGhostNode(ghostname)
-            ghost.reparentTo(node)
-            return node
-        return update_wrapper(func0, func)
+    def add_ghostnode(node):
+        """ Adds a child ghostnode to a node as a workaround for the
+        ghost-static node collision detection problem."""
+        name = "%s-ghost" % node.getName()
+        ghost = NodePath(BulletGhostNode(name))
+        ghost.reparentTo(node)
+        return ghost

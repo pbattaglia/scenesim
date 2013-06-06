@@ -7,7 +7,7 @@ from itertools import izip
 # External
 from libpanda import Mat4, TransformState, Vec3
 import panda3d.bullet as p3b
-from panda3d.bullet import BulletBodyNode, BulletRigidBodyNode
+from panda3d.bullet import BulletBodyNode, BulletGhostNode, BulletRigidBodyNode
 # Project
 from scenesim.objects.sso import SSO
 #
@@ -372,14 +372,12 @@ class GHSO(PSO):
     """ PSO subclass for `BulletGhostNode`s."""
 
     type_ = BulletGhostNode
+    _prop_tags = ("num_overlapping_nodes", "overlapping_nodes")
+    _res_tags = ()
 
     @wraps(type_.get_num_overlapping_nodes, assigned=("__name__", "__doc__"))
     def get_num_overlapping_nodes(self):
         return self.node().get_num_overlapping_nodes()
-
-    @wraps(type_.get_overlapping_node, assigned=("__name__", "__doc__"))
-    def get_overlapping_node(self):
-        return self.node().get_overlapping_node()
 
     @wraps(type_.get_overlapping_nodes, assigned=("__name__", "__doc__"))
     def get_overlapping_nodes(self):

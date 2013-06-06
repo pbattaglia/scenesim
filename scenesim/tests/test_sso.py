@@ -10,9 +10,9 @@ from panda3d.bullet import BulletBoxShape, BulletRigidBodyNode, BulletShape
 from pandac.PandaModules import GeomNode, ModelRoot, NodePath, PandaNode
 from path import path
 # Project
-from .. objects import GSO, PSO, RBSO, SSO
-from .. objects.pso import cast_c_float
-from .. objects.sso import Cache
+from .. objects.gso import GSO
+from .. objects.pso import GHSO, PSO, RBSO, cast_c_float
+from .. objects.sso import Cache, SSO
 
 
 resource_types = (BulletShape, GeomNode, ModelRoot)

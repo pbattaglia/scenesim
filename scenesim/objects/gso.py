@@ -2,10 +2,10 @@
 # Standard
 from functools import wraps
 # External
-from panda3d.core import Loader
 from pandac.PandaModules import GeomNode, ModelRoot, NodePath
 from path import path
 # Project
+from scenesim.display.lightbase import Loader
 from scenesim.objects.sso import SSO
 #
 from pdb import set_trace as BP
@@ -16,9 +16,7 @@ class GSO(SSO):
 
     _prop_tags = ("color", "model")
     _res_tags = ("model",)
-    # This is the default loader instance. If a different one is
-    # desired, just set it on a per-GSO-instance basis.
-    loader = Loader.getGlobalPtr()
+    loader = Loader
 
     def __init__(self, *args, **kwargs):
         ## Using super fails, probably because NodePath is a C++ class.
