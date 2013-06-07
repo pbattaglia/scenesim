@@ -178,7 +178,8 @@ class Picker(Viewer):
         """ Makes a mark GSO."""
         mark = self.base_mark.copy()
         mat = node.getMat(self.scene)
-        mark.apply_prop(dict(name=name, mat=mat), other=self.scene)
+        mark.apply_prop(dict(name=name), other=self.scene)
+        mark.setMat(self.scene, mat)
         mark.setScale(self.scene, mark.getScale(self.scene) + extent)
         mark.wrtReparentTo(node)
         return mark

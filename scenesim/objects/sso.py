@@ -325,16 +325,10 @@ class SSO(NodePath):
     def dump(self, F, other=None):
         """ Dump property into a file F."""
         state = (self.__class__, self.read_prop(other=other))
-        try:
-            f = path(F)
-        except TypeError:
-            if isinstance(F, file):
-                pickle.dump(state, F)
-            else:
-                raise TypeError("F is type %s, must be str, path or file" %
-                                type(F))
+        if isinstance(F, file):
+            pickle.dump(state, F)
         else:
-            with f.open("w") as fid:
+            with path(F).open("w") as fid:
                 pickle.dump(state, fid)
 
     @staticmethod
@@ -346,16 +340,10 @@ class SSO(NodePath):
     @staticmethod
     def read(F):
         """ Read type and property dict from pickled file."""
-        try:
-            f = path(F)
-        except TypeError:
-            if isinstance(F, file):
-                type_, props = pickle.load(F)
-            else:
-                raise TypeError("F is type %s, must be str, path or file" %
-                                type(F))
+        if isinstance(F, file):
+            type_, props = pickle.load(F)
         else:
-            with f.open("r") as fid:
+            with path(F).open("r") as fid:
                 type_, props = pickle.load(fid)
         return type_, props
 
@@ -388,32 +376,20 @@ class SSO(NodePath):
         """ Saves tree to file or path F."""
         state = self.state_prop()  # TODO: add type_ filter?
         # Save to disk.
-        try:
-            f = path(F)
-        except TypeError:
-            if isinstance(F, file):
-                pickle.dump(state, F)
-            else:
-                raise TypeError("F is type %s, must be str, path or file" %
-                                type(F))
+        if isinstance(F, file):
+            pickle.dump(state, F)
         else:
-            with f.open("w") as fid:
+            with path(F).open("w") as fid:
                 pickle.dump(state, fid)
 
     @classmethod
     def load_tree(cls, F):
         """ Loads tree from file or path F."""
         # Load from disk.
-        try:
-            f = path(F)
-        except TypeError:
-            if isinstance(F, file):
-                types, props, porder = pickle.load(F)
-            else:
-                raise TypeError("F is type %s, must be str, path or file" %
-                                type(F))
+        if isinstance(F, file):
+            types, props, porder = pickle.load(F)
         else:
-            with f.open("r") as fid:
+            with path(F).open("r") as fid:
                 types, props, porder = pickle.load(fid)
         ssos = (cls._load(type_, prop) for type_, prop in izip(types, props))
         # Build the tree. node is the top.
