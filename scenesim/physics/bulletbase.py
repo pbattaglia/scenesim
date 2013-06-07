@@ -124,8 +124,10 @@ class JointManager(dict):
             raise TypeError("Bad type: %s" % type(val))
         # Attach it to self.bbase.
         try:
+            # self.bbase.world.attachConstraint(val)
             self.bbase.attach(val)
         except AttributeError:
+            BP()
             pass
         # Then do normal dict add.
         super(self.__class__, self).__setitem__(key, val)
@@ -133,8 +135,10 @@ class JointManager(dict):
     def __delitem__(self, key):
         """ Destroy constraint(s). key must be hashable."""
         try:
-            self.bbase.remove(key)
+            # self.bbase.world.removeConstraint(self[key])
+            self.bbase.remove(self[key])
         except AttributeError:
+            BP()
             pass
         # Do normal dict delete.
         super(self.__class__, self).__delitem__(key)
@@ -179,7 +183,6 @@ class JointManager(dict):
         pivot_np.removeNode()
         # Create the joint.
         joint = type_(np0.node(), np1.node(), ts0, ts1, False)
-        #BP()
         for ax in xrange(4):
             joint.setAngularLimit(ax, 0, 0)
             joint.setLinearLimit(ax, 0, 0)
@@ -188,21 +191,21 @@ class JointManager(dict):
         joint.setDebugDrawSize(2)
         return joint
 
-    def attach(self):
-        """ Attach all of the joints to bbase."""
-        for joint in self.itervalues():
-            try:
-                self.bbase.attach(joint)
-            except AttributeError:
-                pass
+    # def attach(self):
+    #     """ Attach all of the joints to bbase."""
+    #     for joint in self.itervalues():
+    #         try:
+    #             self.bbase.attach(joint)
+    #         except AttributeError:
+    #             pass
 
-    def remove(self):
-        """ Remove all of the joints from bbase."""
-        for joint in self.itervalues():
-            try:
-                self.bbase.remove(joint)
-            except AttributeError:
-                pass
+    # def remove(self):
+    #     """ Remove all of the joints from bbase."""
+    #     for joint in self.itervalues():
+    #         try:
+    #             self.bbase.remove(joint)
+    #         except AttributeError:
+    #             pass
 
 
 class BulletBase(object):

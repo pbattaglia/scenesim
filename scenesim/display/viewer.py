@@ -286,13 +286,21 @@ class Viewer(ShowBase, object):
         self.sso = self.ssos[i]
         self.sso.reparentTo(self.scene)
         self.cache = self.scene.store_tree()
+        self.attach_physics()
+
+    def attach_physics(self):
+        # Attach `self.scene` to the physics world.
         self.scene.init_tree(tags=("shape",))
-        # Attach it to the physics world.
         bnodes = [n for n in self.scene.descendants(type_=PSO)]
         for bnode in bnodes:
             bnode.setCollideMask(BitMask32.allOn())
             bnode.node().setDeactivationEnabled(False)
         self.bbase.attach(bnodes)
+
+    def remove_physics(self):
+        # Remove `self.scene` from the physics world.
+        self.bbase.remove(n for n in self.scene.descendants(type_=PSO))
+        self.scene.destroy_tree(tags=("shape",))
 
     def prev(self):
         """ Task: Go back one SSO."""
