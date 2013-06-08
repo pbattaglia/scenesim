@@ -69,7 +69,7 @@ class GSO(SSO):
     def delete_model(self):
         """ Destroy model nodes that are descendants and have tag 'model'."""
         if not self.isEmpty() and self.getTag("resource") == "model":
-            nodes = self.descendants(depths=ice(1, None))
+            nodes = self.descendants(depths=slice(1, None))
             for node in nodes:
                 if isinstance(node.node(), ModelRoot):
                     node.clearModelNodes()
