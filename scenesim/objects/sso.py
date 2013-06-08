@@ -17,7 +17,7 @@ class SSO(NodePath):
     """ Subclass of NodePath with SSO-specific functionality."""
 
     type_ = PandaNode
-    _prop_tags = ("pos", "quat", "scale", "name")
+    _prop_tags = ("pos", "quat", "scale", "mat", "name")
     _res_tags = ()
 
     def __init__(self, *args, **kwargs):
