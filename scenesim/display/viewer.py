@@ -11,7 +11,10 @@ from panda3d.core import WindowProperties
 from pandac.PandaModules import AmbientLight, NodePath, Spotlight
 from path import path
 # Project
-from scenesim.objects import GSO, PSO, SSO
+from scenesim.display.lightbase import Loader
+from scenesim.objects.gso import GSO
+from scenesim.objects.pso import GHSO, PSO, RBSO
+from scenesim.objects.sso import SSO
 from scenesim.physics.bulletbase import BulletBase
 
 
@@ -135,26 +138,14 @@ class Viewer(ShowBase, object):
 
     def init_ssos(self, ssos):
         """ Initialize the ssos."""
-        GSO.loader = self.graphicsEngine.getDefaultLoader()
+        GSO.loader = Loader  # self.graphicsEngine.getDefaultLoader()
         # Put all the input ssos into one list.
         self.ssos = []
         for sso in ssos:
             if not isinstance(sso, NodePath):
                 raise TypeError("Must be NodePath: %s (%s)" % (sso, type(sso)))
             # Set up the node and its descendants.
-            # BP()
             sso.init_tree(tags=("model",))
-            # nodes = sso.descendants()
-            # for node in nodes:
-            #     # Get the state tag.
-            #     state = get_tag(node)
-            #     # if isinstance(state, GState):
-            #     #     # Set GState's loader.
-            #     #     state.loader = self.graphicsEngine.getDefaultLoader()
-            #     # Push the state to the node and initialize the resources.
-            #     state.set_node(node)
-            #     state.initialize(node, names=["model"])
-            # Store the sso.
             self.ssos.append(sso)
         # Number of ssos.
         self.n_ssos = len(self.ssos)
@@ -164,24 +155,8 @@ class Viewer(ShowBase, object):
         # Put all the input ssos into one list.
         if not isinstance(bg, NodePath):
             raise TypeError("Must be NodePath: %s (%s)" % (bg, type(bg)))
-        GSO.loader = self.graphicsEngine.getDefaultLoader()
+        GSO.loader = Loader  # self.graphicsEngine.getDefaultLoader()
         bg.init_tree(tags=("model",))
-        # # Set up the node and its descendants.
-        # nodes = bg.descendants()
-        # for node in nodes:
-        #     # Get the state tag.
-        #     state = get_tag(node)
-        #     if isinstance(state, GState):
-        #         # Set GState's loader.
-        #         state.loader = self.loader
-        #     try:
-        #         # Push the state to the node and initialize the resources.
-        #         state.set_node(node)
-        #         state.initialize(node, names=["model"])
-        #     except AttributeError:
-        #         # It might just be a regular NodePath with no tag.
-        #         BP()
-        #         pass
         self.background = bg
         self.background.reparentTo(self.scene)
 
@@ -238,9 +213,6 @@ class Viewer(ShowBase, object):
 
     def bp(self, task):
         """ Task: break."""
-        C = self.sso
-        B = [x for x in self.sso.getChildren()]
-        G = [x.getChildren()[0] for x in B if len(x.getChildren()) > 0]
         BP()
         return task.done
 
@@ -314,13 +286,21 @@ class Viewer(ShowBase, object):
         self.sso = self.ssos[i]
         self.sso.reparentTo(self.scene)
         self.cache = self.scene.store_tree()
+        self.attach_physics()
+
+    def attach_physics(self):
+        # Attach `self.scene` to the physics world.
         self.scene.init_tree(tags=("shape",))
-        # Attach it to the physics world.
         bnodes = [n for n in self.scene.descendants(type_=PSO)]
         for bnode in bnodes:
             bnode.setCollideMask(BitMask32.allOn())
             bnode.node().setDeactivationEnabled(False)
         self.bbase.attach(bnodes)
+
+    def remove_physics(self):
+        # Remove `self.scene` from the physics world.
+        self.bbase.remove(n for n in self.scene.descendants(type_=PSO))
+        self.scene.destroy_tree(tags=("shape",))
 
     def prev(self):
         """ Task: Go back one SSO."""
@@ -356,7 +336,7 @@ def setup_bullet():
     bbase = BulletBase()
     bbase.init()
     # Gravity
-    bbase.set_gravity((0., 0., -9.8))
+    bbase.gravity = (0., 0., -9.8)
     # Physics step duration
     bbase.sim_par["size"] = 1. / 100
     return bbase

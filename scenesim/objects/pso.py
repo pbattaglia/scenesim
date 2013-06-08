@@ -7,7 +7,7 @@ from itertools import izip
 # External
 from libpanda import Mat4, TransformState, Vec3
 import panda3d.bullet as p3b
-from panda3d.bullet import BulletBodyNode, BulletRigidBodyNode
+from panda3d.bullet import BulletBodyNode, BulletGhostNode, BulletRigidBodyNode
 # Project
 from scenesim.objects.sso import SSO
 #
@@ -237,24 +237,20 @@ class PSO(SSO):
     _prop_tags = ("friction", "restitution", "shape")
     _res_tags = ("shape",)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs):               
         # Converts args so they're appropriate for self.type_.
         if len(args) == 0:
             args = ("",)
-        new_args = []
-        for arg in args:
-            if isinstance(arg, self.type_):
-                new_arg = arg
-            elif hasattr(arg, "node"):
-                new_arg = arg.node()
-            elif isinstance(arg, str):
-                new_arg = self.type_(arg)
-            else:
-                raise TypeError("Unhandled argument type: %s" % type(arg))
-            new_args.append(new_arg)
+        if isinstance(args[0], str):
+            args = (self.type_(args[0]),) + args[1:]
+            tag = self.__class__
+        else:
+            tag = None
         ## Using super fails, probably because NodePath is a C++ class.
         # super(PSO, self).__init__(self, *new_args, **kwargs)
-        SSO.__init__(self, *new_args, **kwargs)
+        SSO.__init__(self, *args, **kwargs)
+        if tag:
+            self.setPythonTag("sso", tag)           
 
     @wraps(type_.set_friction, assigned=("__name__", "__doc__"))
     def set_friction(self, friction):
@@ -333,3 +329,52 @@ class RBSO(PSO):
     @wraps(type_.get_angular_velocity, assigned=("__name__", "__doc__"))
     def get_angular_velocity(self):
         return self.node().get_angular_velocity()
+
+
+class RBSO(PSO):
+    """ PSO subclass for `BulletRigidBodyNode`s."""
+
+    type_ = BulletRigidBodyNode
+    _prop_tags = ("linear_velocity", "angular_velocity", "mass")
+    _res_tags = ()
+
+    @wraps(type_.set_mass, assigned=("__name__", "__doc__"))
+    def set_mass(self, mass):
+        self.node().set_mass(mass)
+
+    @cast_c_float
+    @wraps(type_.get_mass, assigned=("__name__", "__doc__"))
+    def get_mass(self):
+        return self.node().get_mass()
+
+    @wraps(type_.set_linear_velocity, assigned=("__name__", "__doc__"))
+    def set_linear_velocity(self, linear_velocity):
+        self.node().set_linear_velocity(linear_velocity)
+
+    @wraps(type_.get_linear_velocity, assigned=("__name__", "__doc__"))
+    def get_linear_velocity(self):
+        return self.node().get_linear_velocity()
+
+    @wraps(type_.set_angular_velocity, assigned=("__name__", "__doc__"))
+    def set_angular_velocity(self, angular_velocity):
+        self.node().set_angular_velocity(angular_velocity)
+
+    @wraps(type_.get_angular_velocity, assigned=("__name__", "__doc__"))
+    def get_angular_velocity(self):
+        return self.node().get_angular_velocity()
+
+
+class GHSO(PSO):
+    """ PSO subclass for `BulletGhostNode`s."""
+
+    type_ = BulletGhostNode
+    _prop_tags = ("num_overlapping_nodes", "overlapping_nodes")
+    _res_tags = ()
+
+    @wraps(type_.get_num_overlapping_nodes, assigned=("__name__", "__doc__"))
+    def get_num_overlapping_nodes(self):
+        return self.node().get_num_overlapping_nodes()
+
+    @wraps(type_.get_overlapping_nodes, assigned=("__name__", "__doc__"))
+    def get_overlapping_nodes(self):
+        return self.node().get_overlapping_nodes()

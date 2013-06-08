@@ -15,7 +15,7 @@ from panda3d.core import PythonCallbackObject, TransformState
 from pandac.PandaModules import NodePath
 # Project
 #
-# from pdb import set_trace as BP
+from pdb import set_trace as BP
 
 
 nan = float("nan")
@@ -99,10 +99,10 @@ class CollisionMonitor(object):
         """ This is for Panda3d 1.8, because it doesn't have the
         contact callback methods."""
         if not self.use_callback:
-            detect = lambda a, b: self.world.contactTestPair(
-                a, b).getNumContacts()
+            def detect(a, b):
+                return self.world.contactTestPair(a, b).getNumContacts() > 0
             n = sum(detect(a, b) for a, b in combinations(self.bodies, 2))
-            self.__iadd__(n / 2)
+            self += n
 
 
 class JointManager(dict):
@@ -124,8 +124,10 @@ class JointManager(dict):
             raise TypeError("Bad type: %s" % type(val))
         # Attach it to self.bbase.
         try:
+            # self.bbase.world.attachConstraint(val)
             self.bbase.attach(val)
         except AttributeError:
+            BP()
             pass
         # Then do normal dict add.
         super(self.__class__, self).__setitem__(key, val)
@@ -133,8 +135,10 @@ class JointManager(dict):
     def __delitem__(self, key):
         """ Destroy constraint(s). key must be hashable."""
         try:
-            self.bbase.remove(key)
+            # self.bbase.world.removeConstraint(self[key])
+            self.bbase.remove(self[key])
         except AttributeError:
+            BP()
             pass
         # Do normal dict delete.
         super(self.__class__, self).__delitem__(key)
@@ -179,7 +183,6 @@ class JointManager(dict):
         pivot_np.removeNode()
         # Create the joint.
         joint = type_(np0.node(), np1.node(), ts0, ts1, False)
-        #BP()
         for ax in xrange(4):
             joint.setAngularLimit(ax, 0, 0)
             joint.setLinearLimit(ax, 0, 0)
@@ -188,21 +191,21 @@ class JointManager(dict):
         joint.setDebugDrawSize(2)
         return joint
 
-    def attach(self):
-        """ Attach all of the joints to bbase."""
-        for joint in self.itervalues():
-            try:
-                self.bbase.attach(joint)
-            except AttributeError:
-                pass
+    # def attach(self):
+    #     """ Attach all of the joints to bbase."""
+    #     for joint in self.itervalues():
+    #         try:
+    #             self.bbase.attach(joint)
+    #         except AttributeError:
+    #             pass
 
-    def remove(self):
-        """ Remove all of the joints from bbase."""
-        for joint in self.itervalues():
-            try:
-                self.bbase.remove(joint)
-            except AttributeError:
-                pass
+    # def remove(self):
+    #     """ Remove all of the joints from bbase."""
+    #     for joint in self.itervalues():
+    #         try:
+    #             self.bbase.remove(joint)
+    #         except AttributeError:
+    #             pass
 
 
 class BulletBase(object):
@@ -239,7 +242,7 @@ class BulletBase(object):
         debug_node = BulletDebugNode('Debug')
         debug_node.showWireframe(True)
         debug_node.showConstraints(True)
-        debug_node.showBoundingBoxes(False)
+        debug_node.showBoundingBoxes(True)
         debug_node.showNormals(True)
         self.world.setDebugNode(debug_node)
         return debug_node
@@ -539,23 +542,10 @@ class BulletBase(object):
         return update_wrapper(func0, func)
 
     @staticmethod
-    def add_ghostnode(func0):
-        """ Decorator. Adds a child ghostnode to a node as a
-        workaround for the ghost-static node collision detection
-        problem.
-
-        @BulletBase.add_ghostnode
-        def make_my_ghostnode(params):
-            print "do stuff"
-            return node
-
-        """
-        def func(*args, **kwargs):
-            # Create node using func0.
-            node = func0(*args, **kwargs)
-            # Create associated ghost node and reparent to the node.
-            ghostname = "%s-ghost" % node.getName()
-            ghost = BulletGhostNode(ghostname)
-            ghost.reparentTo(node)
-            return node
-        return update_wrapper(func0, func)
+    def add_ghostnode(node):
+        """ Adds a child ghostnode to a node as a workaround for the
+        ghost-static node collision detection problem."""
+        name = "%s-ghost" % node.getName()
+        ghost = NodePath(BulletGhostNode(name))
+        ghost.reparentTo(node)
+        return ghost

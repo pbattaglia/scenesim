@@ -2,13 +2,22 @@
 # Standard
 from functools import wraps
 # External
-from panda3d.core import Loader
-from pandac.PandaModules import GeomNode, ModelRoot, NodePath
+from panda3d.core import GeomNode, ModelRoot, NodePath
+#from pandac.PandaModules import
 from path import path
 # Project
+from scenesim.display.lightbase import Loader
 from scenesim.objects.sso import SSO
 #
 from pdb import set_trace as BP
+
+
+class GSOError(Exception):
+    pass
+
+
+class LoaderError(GSOError):
+    pass
 
 
 class GSO(SSO):
@@ -16,9 +25,7 @@ class GSO(SSO):
 
     _prop_tags = ("color", "model")
     _res_tags = ("model",)
-    # This is the default loader instance. If a different one is
-    # desired, just set it on a per-GSO-instance basis.
-    loader = Loader.getGlobalPtr()
+    loader = Loader
 
     def __init__(self, *args, **kwargs):
         ## Using super fails, probably because NodePath is a C++ class.
@@ -43,15 +50,18 @@ class GSO(SSO):
         """ Initialize modelnode. GSOs should not have non-resource
         nodes parented to them because 'destroy_model' removes all
         descendant nodes with tag 'model'."""
+        model_name = self.get_model()
         try:
             # Load the model from disk.
-            node = self.loader.loadSync(self.get_model())
+            node = self.loader.load_model(model_name)
         except NameError:
             # Probably won't enter here, but if so it needs to be debugged.
             BP()
             pass
         else:
-            node.setName(path(self.get_model()).basename())
+            if node is None:
+                raise LoaderError("Could not find model: %s" % model_name)
+            node.setName(path(model_name).basename())
             NodePath(node).reparentTo(self)
             self.clear_materials()
             self.setTag("resource", "model")

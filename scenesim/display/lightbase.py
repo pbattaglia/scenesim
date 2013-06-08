@@ -1,15 +1,34 @@
 """ Class definition for LightBase. """
-from panda3d.core import Loader
-# from direct.showbase import Loader
+# Standard
+import os
+import sys
+# External
 from libpanda import BitMask32
 from numpy import fromstring
-import os
+from panda3d.core import Loader as PandaLoader
+from panda3d.core import TexturePool
 from pandac.PandaModules import (
     AmbientLight, Camera, Filename, FrameBufferProperties, GraphicsEngine,
     GraphicsOutput, GraphicsPipe, GraphicsPipeSelection, ModelNode, NodePath,
     PerspectiveLens, PointLight, RescaleNormalAttrib, Texture,
     WindowProperties)
-import sys
+from path import path
+
+
+class Loader(object):
+    ## TODO:
+    #
+    # Make Loader than can load models and textures:
+    #
+    # PandaLoader.loadAsync
+    # TexturePool.loadTexture
+
+    panda_loader = PandaLoader.getGlobalPtr()
+    texture_loader = TexturePool
+    load_model = panda_loader.loadSync
+    load_texture = texture_loader.loadTexture
+    loadSync = load_model
+    loadModel = load_model
 
 
 class LightBase(object):
@@ -44,8 +63,8 @@ class LightBase(object):
         # Get the model loader object and assign it to the engine
         # self.loader = Loader.Loader(self)
         # self.engine.setDefaultLoader(self.loader.loader)
-        self.loader = Loader.getGlobalPtr()
-        self.engine.setDefaultLoader(self.loader)
+        self.loader = Loader()
+        self.engine.setDefaultLoader(self.loader.panda_loader)
 
     @staticmethod
     def init_fbp():
@@ -70,7 +89,7 @@ class LightBase(object):
     def make_window(self, size=None, name=None, sort=0, xflags=0,
                     host_out=None):
         """ Create an onscreen window -- high-level interface for
-        makeOutput"""
+        make_output"""
 
         # Handle size
         if size is None and host_out is not None:
@@ -402,33 +421,29 @@ class LightBase(object):
     @staticmethod
     def trigger_copy(output):
         """ This signals the texture to be pushed to RAM after the
-        next renderFrame"""
+        next render_frame"""
         output.trigger_copy()
 
     def render_frame(self):
         """ Render the frame."""
-        self.engine.renderFrame()
         # If you're trying to read the texture buffer, remember to
         # call self.trigger_copy()
+        self.engine.renderFrame()
 
     @staticmethod
     def get_tex_image(tex, freshape=True):
-        """ Returns numpy arr containing image in tex """
-
-        # Remember to call self.triggerCopy() before
-        # self.renderFrame(), or the next frame won't be pushed to RAM
-
+        """ Returns numpy array containing image in tex """
+        # Remember to call self.trigger_copy() before
+        # self.render_frame(), or the next frame won't be pushed to RAM
         if not tex.hasRamImage():
-            arr = None
+            img = None
         else:
-            size = (tex.getXSize(), tex.getYSize())
             texdata = tex.getRamImage().getData()
-            arr = fromstring(texdata, "u1")
-
+            img = fromstring(texdata, "u1")
             if freshape:
-                arr = arr.reshape(list(size) + [-1])[:, :, [2, 1, 0, 3]]
-
-        return arr
+                shape = [tex.getYSize(), tex.getXSize(), -1]
+                img = img.reshape(shape)[:, :, [2, 1, 0, 3]]
+        return img
 
     @staticmethod
     def screenshot(output, pth=None):
@@ -437,7 +452,6 @@ class LightBase(object):
             filename = GraphicsOutput.makeScreenshotFilename()
         else:
             filename = Filename(pth)
-
         if isinstance(output, GraphicsOutput):
             f_success = output.saveScreenshot(filename)
         elif isinstance(output, Texture):
@@ -447,15 +461,14 @@ class LightBase(object):
                 f_success = output.write(filename)
         else:
             raise TypeError("Unhandled output type: " + type(output))
-
         return f_success
 
     def destroy(self):
         """ self.__exitfunc() calls this automatically """
         self.close_all_outputs()
-        if getattr(self, "loader", None):
-            self.loader.destroy()
-            self.loader = None
+        # if getattr(self, "loader", None):
+        #     self.loader.destroy()
+        #     self.loader = None
         if getattr(self, "engine", None):
             self.engine.removeAllWindows()
             self.engine = None
