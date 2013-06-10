@@ -362,6 +362,15 @@ class RBSO(PSO):
     @wraps(type_.get_angular_velocity, assigned=("__name__", "__doc__"))
     def get_angular_velocity(self):
         return self.node().get_angular_velocity()
+    
+    @wraps(type_.setDeactivationEnabled, assigned=("__name__", "__doc__"))
+    def set_deactivation_enabled(self, isEnabled):
+        return self.node().setDeactivationEnabled(isEnabled)
+    
+    @wraps(type_.setGravity, assigned=("__name__", "__doc__"))
+    def set_gravity(self, grav):
+        return self.node().setGravity(grav)
+
 
 
 class GHSO(PSO):
