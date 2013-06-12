@@ -8,9 +8,10 @@ from math import isnan, sqrt
 # External
 from libpanda import BitMask32, Point3, Quat, Vec3
 import numpy as np
-from panda3d.bullet import (BulletConstraint, BulletDebugNode,
+from panda3d.bullet import (BulletBaseCharacterControllerNode, BulletBodyNode,
+                            BulletConstraint, BulletDebugNode,
                             BulletGenericConstraint, BulletGhostNode,
-                            BulletWorld)
+                            BulletVehicle, BulletWorld)
 from panda3d.core import PythonCallbackObject, TransformState
 from pandac.PandaModules import NodePath
 # Project
@@ -217,6 +218,8 @@ class BulletBase(object):
     ghost_bit = BitMask32.bit(1)
     static_bit = BitMask32.bit(2)
     dynamic_bit = ghost_bit | static_bit
+    bw_types = (BulletBaseCharacterControllerNode, BulletBodyNode,
+                BulletConstraint, BulletVehicle)
 
     def __init__(self):
         self.world = None
@@ -303,10 +306,14 @@ class BulletBase(object):
             objs = [objs]
         elif isinstance(objs, dict):
             objs = objs.itervalues()
-        # Attach them.
+        bw_objs = []
         for obj in objs:
             if isinstance(obj, NodePath):
                 obj = obj.node()
+            if isinstance(obj, self.bw_types):
+                bw_objs.append(obj)            
+        # Attach them.
+        for obj in bw_objs:
             # Apply existing axis constraints to the objects.
             self._constrain_axis(obj)
             # Attach the objects to the world.
@@ -333,10 +340,14 @@ class BulletBase(object):
             objs = [objs]
         elif isinstance(objs, dict):
             objs = objs.itervalues()
-        # Remove them.
+        bw_objs = []
         for obj in objs:
             if isinstance(obj, NodePath):
                 obj = obj.node()
+            if isinstance(obj, self.bw_types):
+                bw_objs.append(obj)
+        # Remove them.
+        for obj in bw_objs:
             # Remove the objects from the world.
             try:
                 self.world.remove(obj)
