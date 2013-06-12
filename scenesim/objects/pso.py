@@ -234,10 +234,10 @@ class PSO(SSO):
     """ Bullet physics state."""
 
     type_ = BulletBodyNode
-    _prop_tags = ("friction", "restitution", "shape")
+    _prop_tags = ("friction", "restitution", "shape", "deactivation_enabled")
     _res_tags = ("shape",)
 
-    def __init__(self, *args, **kwargs):               
+    def __init__(self, *args, **kwargs):
         # Converts args so they're appropriate for self.type_.
         if len(args) == 0:
             args = ("",)
@@ -250,7 +250,7 @@ class PSO(SSO):
         # super(PSO, self).__init__(self, *new_args, **kwargs)
         SSO.__init__(self, *args, **kwargs)
         if tag:
-            self.setPythonTag("sso", tag)           
+            self.setPythonTag("sso", tag)
 
     @wraps(type_.set_friction, assigned=("__name__", "__doc__"))
     def set_friction(self, friction):
@@ -299,79 +299,52 @@ class PSO(SSO):
             self.node().removeShape(shape)
         self.clearTag("resource")
 
-
-class RBSO(PSO):
-    type_ = BulletRigidBodyNode
-    _prop_tags = ("linear_velocity", "angular_velocity", "mass")
-    _res_tags = ()
-
-    @wraps(type_.set_mass, assigned=("__name__", "__doc__"))
-    def set_mass(self, mass):
-        self.node().set_mass(mass)
-
-    @cast_c_float
-    @wraps(type_.get_mass, assigned=("__name__", "__doc__"))
-    def get_mass(self):
-        return self.node().get_mass()
-
-    @wraps(type_.set_linear_velocity, assigned=("__name__", "__doc__"))
-    def set_linear_velocity(self, linear_velocity):
-        self.node().set_linear_velocity(linear_velocity)
-
-    @wraps(type_.get_linear_velocity, assigned=("__name__", "__doc__"))
-    def get_linear_velocity(self):
-        return self.node().get_linear_velocity()
-
-    @wraps(type_.set_angular_velocity, assigned=("__name__", "__doc__"))
-    def set_angular_velocity(self, angular_velocity):
-        self.node().set_angular_velocity(angular_velocity)
-
-    @wraps(type_.get_angular_velocity, assigned=("__name__", "__doc__"))
-    def get_angular_velocity(self):
-        return self.node().get_angular_velocity()
-
-
-class RBSO(PSO):
-    """ PSO subclass for `BulletRigidBodyNode`s."""
-
-    type_ = BulletRigidBodyNode
-    _prop_tags = ("linear_velocity", "angular_velocity", "mass")
-    _res_tags = ()
-
-    @wraps(type_.set_mass, assigned=("__name__", "__doc__"))
-    def set_mass(self, mass):
-        self.node().set_mass(mass)
-
-    @cast_c_float
-    @wraps(type_.get_mass, assigned=("__name__", "__doc__"))
-    def get_mass(self):
-        return self.node().get_mass()
-
-    @wraps(type_.set_linear_velocity, assigned=("__name__", "__doc__"))
-    def set_linear_velocity(self, linear_velocity):
-        self.node().set_linear_velocity(linear_velocity)
-
-    @wraps(type_.get_linear_velocity, assigned=("__name__", "__doc__"))
-    def get_linear_velocity(self):
-        return self.node().get_linear_velocity()
-
-    @wraps(type_.set_angular_velocity, assigned=("__name__", "__doc__"))
-    def set_angular_velocity(self, angular_velocity):
-        self.node().set_angular_velocity(angular_velocity)
-
-    @wraps(type_.get_angular_velocity, assigned=("__name__", "__doc__"))
-    def get_angular_velocity(self):
-        return self.node().get_angular_velocity()
-    
     @wraps(type_.set_deactivation_enabled, assigned=("__name__", "__doc__"))
     def set_deactivation_enabled(self, is_enabled):
         return self.node().set_deactivation_enabled(is_enabled)
-    
+
+    @wraps(type_.is_deactivation_enabled, assigned=("__name__", "__doc__"))
+    def get_deactivation_enabled(self):
+        return self.node().is_deactivation_enabled()
+
+
+class RBSO(PSO):
+    type_ = BulletRigidBodyNode
+    _prop_tags = ("linear_velocity", "angular_velocity", "mass", "gravity")
+    _res_tags = ()
+
+    @wraps(type_.set_mass, assigned=("__name__", "__doc__"))
+    def set_mass(self, mass):
+        self.node().set_mass(mass)
+
+    @cast_c_float
+    @wraps(type_.get_mass, assigned=("__name__", "__doc__"))
+    def get_mass(self):
+        return self.node().get_mass()
+
+    @wraps(type_.set_linear_velocity, assigned=("__name__", "__doc__"))
+    def set_linear_velocity(self, linear_velocity):
+        self.node().set_linear_velocity(linear_velocity)
+
+    @wraps(type_.get_linear_velocity, assigned=("__name__", "__doc__"))
+    def get_linear_velocity(self):
+        return self.node().get_linear_velocity()
+
+    @wraps(type_.set_angular_velocity, assigned=("__name__", "__doc__"))
+    def set_angular_velocity(self, angular_velocity):
+        self.node().set_angular_velocity(angular_velocity)
+
+    @wraps(type_.get_angular_velocity, assigned=("__name__", "__doc__"))
+    def get_angular_velocity(self):
+        return self.node().get_angular_velocity()
+
     @wraps(type_.set_gravity, assigned=("__name__", "__doc__"))
     def set_gravity(self, grav):
         return self.node().set_gravity(grav)
 
-
+    @wraps(type_.get_gravity, assigned=("__name__", "__doc__"))
+    def get_gravity(self):
+        return self.node().get_gravity()
 
 
 class GHSO(PSO):
