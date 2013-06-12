@@ -340,7 +340,7 @@ class RBSO(PSO):
 
     @wraps(type_.set_mass, assigned=("__name__", "__doc__"))
     def set_mass(self, mass):
-        self.node().set_mass(mass)
+        return self.node().set_mass(mass)
 
     @cast_c_float
     @wraps(type_.get_mass, assigned=("__name__", "__doc__"))
@@ -349,7 +349,7 @@ class RBSO(PSO):
 
     @wraps(type_.set_linear_velocity, assigned=("__name__", "__doc__"))
     def set_linear_velocity(self, linear_velocity):
-        self.node().set_linear_velocity(linear_velocity)
+        return self.node().set_linear_velocity(linear_velocity)
 
     @wraps(type_.get_linear_velocity, assigned=("__name__", "__doc__"))
     def get_linear_velocity(self):
@@ -357,7 +357,7 @@ class RBSO(PSO):
 
     @wraps(type_.set_angular_velocity, assigned=("__name__", "__doc__"))
     def set_angular_velocity(self, angular_velocity):
-        self.node().set_angular_velocity(angular_velocity)
+        return self.node().set_angular_velocity(angular_velocity)
 
     @wraps(type_.get_angular_velocity, assigned=("__name__", "__doc__"))
     def get_angular_velocity(self):
@@ -366,11 +366,18 @@ class RBSO(PSO):
     @wraps(type_.set_deactivation_enabled, assigned=("__name__", "__doc__"))
     def set_deactivation_enabled(self, is_enabled):
         return self.node().set_deactivation_enabled(is_enabled)
+
+    @wraps(type_.get_deactivation_enabled, assigned=("__name__", "__doc__"))
+    def get_deactivation_enabled(self):
+        return self.node().get_deactivation_enabled()
     
     @wraps(type_.set_gravity, assigned=("__name__", "__doc__"))
     def set_gravity(self, grav):
         return self.node().set_gravity(grav)
 
+    @wraps(type_.get_gravity, assigned=("__name__", "__doc__"))
+    def get_gravity(self):
+        return self.node().get_gravity()    
 
 
 
