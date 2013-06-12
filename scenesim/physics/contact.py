@@ -256,6 +256,7 @@ class Parser(object):
         self._bottom_ibody = None
         self._bottom_bodies = None
         self._graph = None
+        self._connected = None
         self._subgroups = None
 
     @property
@@ -341,6 +342,14 @@ class Parser(object):
             self._graph = nx.from_numpy_matrix(self.relations)
         return self._graph
 
+    @property
+    def connected(self):
+        """ Returns whether scene is fully connected by proximal
+        contacts."""
+        if self._connected is None:
+            self._connected = nx.is_connected(self.graph)
+        return self._connected
+    
     @property
     def subgroups(self):
         """ List of all subgroups (subgraphs) of the graph."""
