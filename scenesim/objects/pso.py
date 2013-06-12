@@ -329,7 +329,6 @@ class RBSO(PSO):
     @wraps(type_.get_angular_velocity, assigned=("__name__", "__doc__"))
     def get_angular_velocity(self):
         return self.node().get_angular_velocity()
-<<<<<<< HEAD
 
 
 class RBSO(PSO):
