@@ -1,13 +1,11 @@
 """ Picker: view and click objects in a scene."""
-# Standard
-# External
 from libpanda import Point3, Vec3, Vec4
 import numpy as np
 from panda3d.core import TransparencyAttrib
 from pandac.PandaModules import (CollisionHandlerQueue, CollisionNode,
                                  CollisionRay, CollisionTraverser,
                                  GeomNode, RenderModeAttrib)
-# Project
+
 from scenesim.display.viewer import Viewer
 from scenesim.objects.gso import GSO
 from scenesim.objects.pso import PSO

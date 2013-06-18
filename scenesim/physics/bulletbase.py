@@ -1,11 +1,10 @@
 """ BulletBase interfaces with Panda3d's Bullet module."""
-# Standard
 from collections import Iterable
 from contextlib import contextmanager
 from functools import update_wrapper
 from itertools import combinations, izip
 from math import isnan, sqrt
-# External
+
 from libpanda import BitMask32, Point3, Quat, Vec3
 import numpy as np
 from panda3d.bullet import (BulletBaseCharacterControllerNode, BulletBodyNode,
@@ -14,8 +13,7 @@ from panda3d.bullet import (BulletBaseCharacterControllerNode, BulletBodyNode,
                             BulletVehicle, BulletWorld)
 from panda3d.core import PythonCallbackObject, TransformState
 from pandac.PandaModules import NodePath
-# Project
-#
+
 from pdb import set_trace as BP
 
 

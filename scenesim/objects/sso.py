@@ -1,16 +1,13 @@
 """ Basic SceneSim objects."""
-# Standard
-from collections import Iterable
 import cPickle as pickle
+from collections import Iterable
 from functools import partial
 from itertools import izip
-# External
+
 from pandac.PandaModules import NodePath, NodePathCollection, PandaNode
 from path import path
-# Project
+
 from scenesim.lib import combomethod
-#
-from pdb import set_trace as BP
 
 
 class SSO(NodePath):
@@ -415,7 +412,7 @@ class Cache(object):
         self._nodes, self._porder = node.tree()
         # Build the cache. The keys are the node names and the values
         # are the nodes and props.
-        self._props = [SSO.from_tag(node).read_prop() for node in self._nodes]
+        self._props = [SSO.from_tag(n).read_prop() for n in self._nodes]
         return self
 
     def restore(self):

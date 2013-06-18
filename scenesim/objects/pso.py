@@ -1,17 +1,14 @@
 """ Physics objects."""
-# Standard
 from collections import Iterable, OrderedDict
 from ctypes import c_float
 from functools import wraps
 from itertools import izip
-# External
-from libpanda import Mat4, TransformState, Vec3
+
 import panda3d.bullet as p3b
+from libpanda import Mat4, TransformState, Vec3
 from panda3d.bullet import BulletBodyNode, BulletGhostNode, BulletRigidBodyNode
-# Project
+
 from scenesim.objects.sso import SSO
-#
-from pdb import set_trace as BP
 
 
 def cast_c_float(func):
@@ -31,20 +28,8 @@ class BShapeManager(list):
         "Cone": p3b.BulletConeShape,
         "Cylinder": p3b.BulletCylinderShape,
         "Plane": p3b.BulletPlaneShape,
-        "Sphere": p3b.BulletSphereShape
-        }
-
+        "Sphere": p3b.BulletSphereShape}
     shape2name = {v: k for k, v in name2shape.iteritems()}
-
-    # shape2name = {
-    #     p3b.BulletBoxShape: "Box",
-    #     p3b.BulletCapsuleShape: "Capsule",
-    #     p3b.BulletConeShape: "Cone",
-    #     p3b.BulletCylinderShape: "Cylinder",
-    #     p3b.BulletPlaneShape: "Plane",
-    #     p3b.BulletSphereShape: "Sphere"
-    #     }
-
     parameters = {
         "Box": OrderedDict((("HalfExtentsWithMargin", Vec3(0.5, 0.5, 0.5)),)),
         "Capsule": OrderedDict((("Radius", 0.5), ("HalfHeight", 0.5))),
@@ -52,8 +37,7 @@ class BShapeManager(list):
         "Cylinder": OrderedDict((("Radius", 0.5), ("Height", 1.))),
         "Plane": OrderedDict((("PlaneNormal", Vec3(0, 0, 1)),
                               ("PlaneConstant", 0.))),
-        "Sphere": OrderedDict((("Radius", 0.5),))
-        }
+        "Sphere": OrderedDict((("Radius", 0.5),))}
 
     def __init__(self, val=""):
         super(self.__class__, self).__init__(self._safe_set(val))
@@ -193,41 +177,6 @@ class BShapeManager(list):
             shapes.append(shape)
             xforms.append(xform)
         return shapes, xforms
-
-    # def remove_shape(self, node, X):
-    #     """ Remove a shape from the BulletBodyNode. If X is an int, we
-    #     remove the X-th shape from this shape list. If X is a
-    #     BulletShape, we just remove it."""
-    #     # Get valid node.
-    #     try:
-    #         node = node.node()
-    #     except AttributeError:
-    #         pass
-    #     shapes = []
-    #     if isinstance(X, BulletShape):
-    #         # X is a BulletShape, just remove it directly.
-    #         shapes.append(X)
-    #     elif isinstance(X, int):
-    #         # X is an int, find its corresponding element among the
-    #         # body's shapes.
-    #         name = self[X][0]
-    #         mat = self[X][2].getMat()
-    #         for i in xrange(node.getNumShapes()):
-    #             shape = node.getShape(i)
-    #             sname = shape.getName()
-    #             smat = node.getShapeMat(i)
-    #             if sname == name and smat == mat:
-    #                 # If the name and transform match, add this shape
-    #                 # to the list.
-    #                 shapes.append(shape)
-    #     else:
-    #         raise TypeError("Can't handle type: %s" % type(X))
-    #     if not shapes:
-    #         raise ValueError("Couldn't find shape: %s" % X)
-    #     # Remove the shapes.
-    #     for shape in shapes:
-    #         node.removeShape(shape)
-    #     return shapes
 
 
 class PSO(SSO):

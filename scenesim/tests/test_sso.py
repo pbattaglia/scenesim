@@ -1,15 +1,14 @@
 """ nosetests for scenesim.objects.sso/gso/pso."""
-# Standard
 from contextlib import contextmanager
 from ctypes import c_float
 from itertools import izip
 import random
-# External
+
 from libpanda import Mat4, Point3, Quat, TransformState, Vec3, Vec4
 from panda3d.bullet import BulletBoxShape, BulletRigidBodyNode, BulletShape
 from pandac.PandaModules import GeomNode, ModelRoot, NodePath, PandaNode
 from path import path
-# Project
+
 from scenesim.objects.gso import GSO
 from scenesim.objects.pso import GHSO, PSO, RBSO, cast_c_float
 from scenesim.objects.sso import Cache, SSO

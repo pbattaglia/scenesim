@@ -1,18 +1,16 @@
 """ Identifies contiguous subsets of objects using Bullet's collision
 detection."""
-# Standard
 from collections import OrderedDict
 from contextlib import contextmanager
 from itertools import chain, combinations
-# External
+
 from libpanda import Vec3
 import networkx as nx
 import numpy as np
 from Polygon.Utils import convexHull
 from scenesim.objects.pso import PSO
 from scenesim.physics.bulletbase import BulletBase
-# Project
-#
+
 from pdb import set_trace as BP
 
 

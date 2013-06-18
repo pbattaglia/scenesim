@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 """ Viewer for SSOs."""
-# Standard
 from pdb import set_trace as BP
 import sys
-# External
+
 from direct.showbase.ShowBase import ShowBase
 from libpanda import AntialiasAttrib, BitMask32, PerspectiveLens, Point3, Vec3
 from panda3d.bullet import BulletRigidBodyNode
 from panda3d.core import WindowProperties
 from pandac.PandaModules import AmbientLight, NodePath, Spotlight
 from path import path
-# Project
+
 from scenesim.display.lightbase import Loader
 from scenesim.objects.gso import GSO
 from scenesim.objects.pso import GHSO, PSO, RBSO

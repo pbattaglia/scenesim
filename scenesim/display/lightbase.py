@@ -1,8 +1,7 @@
 """ Class definition for LightBase. """
-# Standard
 import os
 import sys
-# External
+
 from libpanda import BitMask32
 from numpy import fromstring
 from panda3d.core import Loader as PandaLoader

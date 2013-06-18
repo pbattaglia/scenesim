@@ -1,15 +1,12 @@
 """ Graphics objects."""
-# Standard
 from functools import wraps
-# External
+from pdb import set_trace as BP
+
 from panda3d.core import GeomNode, ModelRoot, NodePath
-#from pandac.PandaModules import
 from path import path
-# Project
+
 from scenesim.display.lightbase import Loader
 from scenesim.objects.sso import SSO
-#
-from pdb import set_trace as BP
 
 
 class GSOError(Exception):
