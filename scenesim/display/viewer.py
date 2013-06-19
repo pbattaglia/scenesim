@@ -130,6 +130,12 @@ class Viewer(ShowBase, object):
             props.setFullscreen(True)
         self.win.requestProperties(props)
 
+    def _set_cursor_hidden(self, b):
+        """ Toggle cursor."""
+        props = WindowProperties()
+        props.setCursorHidden(b)
+        self.win.requestProperties(props)
+        
     def init_physics(self, bbase):
         """ Initialize the physics resources."""
         self.bbase = bbase
@@ -180,7 +186,7 @@ class Viewer(ShowBase, object):
         # Update amount of time simulated so far.
         self.old_elapsed += dt
         # Step the physics dt time.
-        size_sub = 1. / 180.
+        size_sub = 1. / 400.
         n_subs = int(dt / size_sub)
         self.bbase.step(dt, n_subs, size_sub)
         return task.cont
@@ -346,10 +352,9 @@ def load(args):
     ssos = []
     for filename in args:
         if path(filename).isfile():
-            with open(filename, "r") as fid:
-                ssos.append(SSO.load_tree(fid))
+            ssos.append(SSO.load_tree(filename))
         else:
-            print "Cannot find file: %s" % filename
+            print("Cannot find file: %s" % filename)
     return ssos
 
 

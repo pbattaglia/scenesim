@@ -1,10 +1,9 @@
 """ Picker: view and click objects in a scene."""
 from libpanda import Point3, Vec3, Vec4
 import numpy as np
-from panda3d.core import TransparencyAttrib
-from pandac.PandaModules import (CollisionHandlerQueue, CollisionNode,
-                                 CollisionRay, CollisionTraverser,
-                                 GeomNode, RenderModeAttrib)
+from panda3d.core import (CollisionHandlerQueue, CollisionNode, CollisionRay,
+                          CollisionTraverser, GeomNode, NodePath,
+                          RenderModeAttrib, TransparencyAttrib)
 
 from scenesim.display.viewer import Viewer
 from scenesim.objects.gso import GSO
@@ -40,6 +39,11 @@ class Picker(Viewer):
                                   Vec4(1., 1., 1., 1.))
         self.max_attach = 5
         self.permanent_events += ["mouse1", "mouse3"]
+        # Make cursor dot.
+        self.cursor = NodePath(self._build_cursor("sphere"))
+        self.cursor.setScale(0.02, 0.02, 0.02)
+        self.cursor.setColor(1., 1., 1., 1.)
+        self.cursor.reparentTo(self.aspect2d)
 
     def init_ssos(self, *args, **kwargs):
         super(Picker, self).init_ssos(*args, **kwargs)
@@ -73,6 +77,22 @@ class Picker(Viewer):
         # Add mouse events.
         self.accept("mouse1", self.clicked, extraArgs=[1])
         self.accept("mouse3", self.clicked, extraArgs=[2])
+
+    def _build_cursor(self, shape="sphere"):
+        if shape == "sphere":
+            cursor = self._load("sphere.bam")
+        elif shape == "cross":
+            cursor = NodePath("cross")
+            S = {"cylinderX.bam": ((0., 0., 0.), (1., 0.1, 0.1)),
+                 "cylinderY.bam": ((0., 0., 0.), (0.1, 1., 0.1)),
+                 "cylinderZ.bam": ((0., 0., 0.), (0.1, 0.1, 1.))}
+            for k, v in S.iteritems():
+                m = self._load(k)
+                m.setName(k)
+                m.setPos(*v[0])
+                m.setScale(*v[1])
+                m.reparentTo(cursor)
+        return cursor
 
     def create_mark(self, color):
         """ Makes a graphical mark object."""
