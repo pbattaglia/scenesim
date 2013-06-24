@@ -27,6 +27,15 @@ class SSO(NodePath):
             self.setPythonTag("sso", self.__class__)
         self.apply_prop(props, other=other)
 
+    def __eq__(self, other):
+        """ Returns boolean indicating whether the underlying nodes
+        are the same."""
+        try:
+            eq = self.getKey() == other.getKey()
+        except AttributeError:
+            eq = False
+        return eq
+
     @classmethod
     def cast(cls, node):
         """ Return a node casted to this class type, and set its
