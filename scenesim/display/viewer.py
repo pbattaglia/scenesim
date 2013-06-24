@@ -304,7 +304,7 @@ class Viewer(ShowBase, object):
 
     def remove_physics(self):
         # Remove `self.scene` from the physics world.
-        self.bbase.remove(n for n in self.scene.descendants(type_=PSO))
+        self.bbase.remove(self.scene.descendants(type_=PSO))
         self.scene.destroy_tree(tags=("shape",))
 
     def prev(self):

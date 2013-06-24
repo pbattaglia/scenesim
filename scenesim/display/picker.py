@@ -47,15 +47,12 @@ class Picker(Viewer):
 
     def init_ssos(self, *args, **kwargs):
         super(Picker, self).init_ssos(*args, **kwargs)
-        # Initialize picker.
-        pickables = sum((sso.descendants(type_=PSO) for sso in self.ssos), [])
-        self.init_picker(pickables)
 
     def init_physics(self, *args, **kwargs):
         super(Picker, self).init_physics(*args, **kwargs)
         self.joints.bbase = self.bbase
 
-    def init_picker(self, pickables):
+    def init_picker(self):
         # Collision traverser
         self.traverser = CollisionTraverser("traverser")
         # Collision handler
@@ -67,16 +64,10 @@ class Picker(Viewer):
         self.picker_ray = CollisionRay()
         self.picker.addSolid(self.picker_ray)
         self.traverser.addCollider(self.pickerNP, self.handler)
-        # Set pickable objs.
-        for i, obj in enumerate(pickables):
-            obj.setTag("pickable", str(i))
         mark_color = (1, 1, 1, 0.25)
         self.base_mark = self.create_mark(color=mark_color)
         connector_color = (1, 1, 1, 1)
         self.base_connector = self.create_connector(color=connector_color)
-        # Add mouse events.
-        self.accept("mouse1", self.clicked, extraArgs=[1])
-        self.accept("mouse3", self.clicked, extraArgs=[2])
 
     def _build_cursor(self, shape="sphere"):
         if shape == "sphere":
@@ -108,10 +99,14 @@ class Picker(Viewer):
         obj = GSO(props=props)
         return obj
 
-    def goto_sso(self, *args, **kwargs):
-        self.clear_attachments()
-        super(Picker, self).goto_sso(*args, **kwargs)
-        self.remove_physics()
+    def start_picker(self, pickables):
+        # Set pickable objs.
+        for i, obj in enumerate(pickables):
+            obj.setTag("pickable", str(i))
+        # Add mouse events.
+        self.accept("mouse1", self.clicked, extraArgs=[1])
+        self.accept("mouse3", self.clicked, extraArgs=[2])
+        # Start contact detector.
         detector = ContactDetector(self.bbase.world, self.scene,
                                    margin=self.contact_margin)
         self.contacts = detector.contacts
@@ -120,6 +115,24 @@ class Picker(Viewer):
         parser = Parser(self.contacts, self.contact_bodies)
         self.contact_bottoms = parser.bottom_bodies
         self.connectors = {}
+
+    def stop_picker(self):
+        self.contacts = None
+        self.contact_bodies = None
+        self.contact_points = None
+        self.contact_bottoms = None
+        self.connectors = None
+        self.removeTask("mouse1")
+        self.removeTask("mouse3")        
+
+    def goto_sso(self, *args, **kwargs):
+        self.clear_attachments()
+        self.stop_picker()
+        super(Picker, self).goto_sso(*args, **kwargs)
+        self.remove_physics()
+        # Start picker.
+        pickables = self.sso.descendants(type_=PSO)
+        self.start_picker(pickables)
         self.attach_physics()
 
     def get_picked_obj(self):
@@ -143,18 +156,21 @@ class Picker(Viewer):
     def clicked(self, button):
         """ Mouse click handler."""
         if self.mouseWatcherNode.hasMouse():
-            # Proportion of time spent in this phase so far [0, 1]
-            # elapsed = self._get_elapsed()
             # Get picked object
             picked_obj = self.get_picked_obj()
             if picked_obj is not None:
                 if self.marked is None:
+                    # New mark activated.
                     self.marked = picked_obj
                     self.show_marked(picked_obj, True)
+                    event = "mark"
                 elif picked_obj == self.marked:
+                    # Existing mark deactivated.
                     self.show_marked(picked_obj, False)
                     self.marked = None
+                    event = "unmark"
                 else:
+                    # New attachment or detachment.
                     pair = tuple(sorted((self.marked, picked_obj)))
                     ij = tuple(sorted((self.contact_bodies.index(pair[0]),
                                        self.contact_bodies.index(pair[1]))))
@@ -163,6 +179,12 @@ class Picker(Viewer):
                         self.store_attachment(ij, pair, f_add)
                         self.show_marked(self.marked, False)
                         self.marked = None
+                        event = "attach" if f_add else "detach"
+                    else:
+                        event = "non-contact"
+            else:
+                event = "non-pick"
+            return picked_obj, event
 
     def store_attachment(self, ij, pair, f_add):
         """ Stores the attached objects, and draws them."""
