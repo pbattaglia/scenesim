@@ -5,11 +5,14 @@ import sys
 
 from direct.showbase.ShowBase import ShowBase
 from libpanda import AntialiasAttrib, BitMask32, PerspectiveLens, Point3, Vec3
+from numpy import array
 from panda3d.bullet import BulletRigidBodyNode
 from panda3d.core import WindowProperties
 from pandac.PandaModules import AmbientLight, NodePath, Spotlight
 from path import path
 
+from scenesim.display.geometry import (extrude, get_projection_mat,
+                                       plane_intersection, project)
 from scenesim.display.lightbase import Loader
 from scenesim.objects.gso import GSO
 from scenesim.objects.pso import GHSO, PSO, RBSO
@@ -129,13 +132,80 @@ class Viewer(ShowBase, object):
             props.setSize(w, h)
             props.setFullscreen(True)
         self.win.requestProperties(props)
+       
+    def _get_screen_size(self):
+        winx = self.win.getXSize()
+        winy = self.win.getYSize()
+        return winx, winy
+
+    def _convert_coordinate(self, P0):
+        """ Convert 3 coordinates to 2d projection, and 2d coordinates
+        to 3d extrusion."""
+        P0 = array(P0)
+        proj_mat = get_projection_mat(self.cam)
+        if P0.size == 2:
+            # 2d to 3d.
+            line = extrude(P0, proj_mat)
+            normal = array((0., 0., 1.))
+            P = plane_intersection(line, array(self.origin), normal)
+        else:
+            # 3d to 2d.
+            P = project(P0, proj_mat)
+        return P
+
+    def _get_screen_mouse_location(self):
+        """ Gets mouse location in screen coordinates."""
+        md = self.win.getPointer(0)
+        s2d = array((md.getX(), md.getY()))
+        return s2d
+
+    def _set_screen_mouse_location(self, s2d):
+        """ Sets mouse location in screen coordinates."""
+        self.win.movePointer(0, *s2d.astype("i"))
+
+    def _get_cursor_location(self):
+        """ Return cursor's 2D or 3D location."""
+        # Mouse's screen coordinates
+        x = self.mouseWatcherNode.getMouseX()
+        y = self.mouseWatcherNode.getMouseY()
+        return self._convert_coordinate((x, y))
+
+    def _set_cursor_location(self, p2d):
+        """ Sets cursor location in window coords [-1, 1]."""
+        s2d = ((p2d * array((1, -1)) + 1.) / 2. *
+               array(self._get_screen_size()))
+        self._set_screen_mouse_location(s2d)
 
     def _set_cursor_hidden(self, b):
         """ Toggle cursor."""
         props = WindowProperties()
         props.setCursorHidden(b)
         self.win.requestProperties(props)
-        
+
+    def draw_cursor2d(self, task):
+        """ Draw cursor indicator."""
+        if getattr(self, "cursor", None) and self.mouseWatcherNode.hasMouse():
+            res = self._get_screen_size()
+            ar = float(res[0]) / res[1]
+            mx = self.mouseWatcherNode.getMouseX()
+            my = self.mouseWatcherNode.getMouseY()
+            self.cursor.setPos(mx * ar, 0, my)
+        return task.cont
+            
+    # def draw_cursor2d(self, task):
+    #     """ Draw cursor indicator."""
+    #     if getattr(self, "cursor", None) and self.mouseWatcherNode.hasMouse():
+    #         mx = self.mouseWatcherNode.getMouseX()
+    #         my = self.mouseWatcherNode.getMouseY()
+    #         p3d = self._convert_coordinate((mx, my))
+    #         p2d = self._convert_coordinate(p3d)[0].squeeze()
+    #         res = self._get_screen_size()
+    #         ar = float(res[0]) / res[1]
+    #         x = p2d[0] * ar
+    #         y = p2d[1]
+    #         self.cursor.setPos(x, 0., y)
+    #     return task.cont
+         
     def init_physics(self, bbase):
         """ Initialize the physics resources."""
         self.bbase = bbase

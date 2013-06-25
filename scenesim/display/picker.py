@@ -41,8 +41,8 @@ class Picker(Viewer):
         self.permanent_events += ["mouse1", "mouse3"]
         # Make cursor dot.
         self.cursor = NodePath(self._build_cursor("sphere"))
-        self.cursor.setScale(0.02, 0.02, 0.02)
-        self.cursor.setColor(1., 1., 1., 1.)
+        self.cursor.setScale(0.015, 0.015, 0.015)
+        self.cursor.setColor(1, 1, 1, 1)
         self.cursor.reparentTo(self.aspect2d)
 
     def init_ssos(self, *args, **kwargs):
