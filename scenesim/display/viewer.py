@@ -235,6 +235,11 @@ class Viewer(ShowBase, object):
         self.background = bg
         self.background.reparentTo(self.scene)
 
+    def _load(self, model):
+        """ Wrapper for egg/bam loading."""
+        node = NodePath(GSO.loader.loadSync(model))
+        return node       
+
     def toggle_task(self, taskname, sort=0):
         """ Toggles taskMgr task 'taskname'."""
         if not self.taskMgr.hasTaskNamed(taskname):

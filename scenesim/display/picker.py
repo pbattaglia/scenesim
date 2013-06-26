@@ -44,7 +44,9 @@ class Picker(Viewer):
         self.cursor.setScale(0.015, 0.015, 0.015)
         self.cursor.setColor(1, 1, 1, 1)
         self.cursor.reparentTo(self.aspect2d)
-
+        self.taskMgr.add(self.draw_cursor2d, "draw_cursor2d")
+        self.permanent_tasks.append("draw_cursor2d")
+        
     def init_ssos(self, *args, **kwargs):
         super(Picker, self).init_ssos(*args, **kwargs)
 
