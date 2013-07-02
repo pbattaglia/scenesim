@@ -2,6 +2,32 @@
 import numpy as np
 
 
+def zbuffer_to_z(zb, near, far):
+    """ Inputs Z-buffer image and returns each pixel's distance from
+    the camera along the z-axis."""
+    z = far * near / (far - zb * (far - near))
+    return z
+
+
+def img_to_d(xi, yi, zb, near, far):
+    """ Inputs image x, y coordinates and Z-buffer image, and returns
+    distance from the camera's position to eachpoint."""
+    z = zbuffer_to_z(zb, near, far)
+    phi = np.arctan2(np.sqrt(xi ** 2 + yi ** 2), near)
+    d = z * np.cos(phi)
+    return d
+
+
+def img_to_xyz(xi, yi, zb, near, far):
+    """ Inputs image x, y coordinates and Z-buffer image, and returns
+    the pixels' x, y, z coordinates in 3D."""
+    z = zbuffer_to_z(zb, near, far)
+    x = xi * z / near
+    y = yi * z / near
+    xyz = np.array((x, y, z))
+    return xyz
+
+
 def get_projection_mat(camera):
     """ Projection matrix of camera."""
     lens = camera.node().getLens()
