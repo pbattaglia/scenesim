@@ -322,8 +322,6 @@ class Parser(object):
                 self._support[j, i] = self.v_relation[j, i]
         return self._support
 
-    relations = support  # Deprecated name was `relations`.
-
     @property
     def bottom_idx(self):
         """ Returns the indices of the contact pair corresponding to
