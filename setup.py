@@ -14,4 +14,5 @@ setup(name="scenesim",
       author_email="pbatt@mit.edu",
       url="http://scenesim.org",
       packages=packages,
-      requires = ["Polygon2", "networkx", "numpy", "panda3d", "path.py"])
+      requires=["Polygon2", "networkx", "numpy", "panda3d", "path.py"],
+      provides=["scenesim"])
