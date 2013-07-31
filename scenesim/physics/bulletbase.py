@@ -309,7 +309,9 @@ class BulletBase(object):
             if isinstance(obj, NodePath):
                 obj = obj.node()
             if isinstance(obj, self.bw_types):
-                bw_objs.append(obj)            
+                bw_objs.append(obj)
+        # Don't attach ones that are already attached.
+        bw_objs = set(bw_objs) - set(self.bodies)
         # Attach them.
         for obj in bw_objs:
             # Apply existing axis constraints to the objects.

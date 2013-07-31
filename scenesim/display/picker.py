@@ -37,7 +37,7 @@ class Picker(Viewer):
                                   Vec4(1., 0.1, 1., 1.),
                                   Vec4(1., 0.5, 0.1, 1.),
                                   Vec4(1., 1., 1., 1.))
-        self.max_attach = 5
+        self.max_attach = 999
         self.permanent_events += ["mouse1", "mouse3"]
         # Make cursor dot.
         self.cursor = NodePath(self._build_cursor("sphere"))

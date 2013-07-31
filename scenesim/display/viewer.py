@@ -371,7 +371,7 @@ class Viewer(ShowBase, object):
     def attach_physics(self):
         # Attach `self.scene` to the physics world.
         self.scene.init_tree(tags=("shape",))
-        bnodes = [n for n in self.scene.descendants(type_=PSO)]
+        bnodes = self.scene.descendants(type_=PSO)
         for bnode in bnodes:
             bnode.setCollideMask(BitMask32.allOn())
             bnode.node().setDeactivationEnabled(False)
