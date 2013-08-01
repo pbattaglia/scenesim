@@ -1,4 +1,5 @@
 """ Picker: view and click objects in a scene."""
+from direct.directtools.DirectGeometry import LineNodePath
 from libpanda import Point3, Vec3, Vec4
 import numpy as np
 from panda3d.core import (CollisionHandlerQueue, CollisionNode, CollisionRay,
@@ -40,13 +41,14 @@ class Picker(Viewer):
         self.max_attach = 999
         self.permanent_events += ["mouse1", "mouse3"]
         # Make cursor dot.
-        self.cursor = NodePath(self._build_cursor("sphere"))
-        self.cursor.setScale(0.015, 0.015, 0.015)
+        self.cursor = self._build_cursor("cross")
+        s = 0.08
+        self.cursor.setScale(s, s, s)
         self.cursor.setColor(1, 1, 1, 1)
         self.cursor.reparentTo(self.aspect2d)
         self.taskMgr.add(self.draw_cursor2d, "draw_cursor2d")
         self.permanent_tasks.append("draw_cursor2d")
-        
+
     def init_ssos(self, *args, **kwargs):
         super(Picker, self).init_ssos(*args, **kwargs)
 
@@ -66,7 +68,7 @@ class Picker(Viewer):
         self.picker_ray = CollisionRay()
         self.picker.addSolid(self.picker_ray)
         self.traverser.addCollider(self.pickerNP, self.handler)
-        mark_color = (1, 1, 1, 0.25)
+        mark_color = (1, 1, 1, 0.3)
         self.base_mark = self.create_mark(color=mark_color)
         connector_color = (1, 1, 1, 1)
         self.base_connector = self.create_connector(color=connector_color)
@@ -75,16 +77,23 @@ class Picker(Viewer):
         if shape == "sphere":
             cursor = self._load("sphere.bam")
         elif shape == "cross":
-            cursor = NodePath("cross")
-            S = {"cylinderX.bam": ((0., 0., 0.), (1., 0.1, 0.1)),
-                 "cylinderY.bam": ((0., 0., 0.), (0.1, 1., 0.1)),
-                 "cylinderZ.bam": ((0., 0., 0.), (0.1, 0.1, 1.))}
-            for k, v in S.iteritems():
-                m = self._load(k)
-                m.setName(k)
-                m.setPos(*v[0])
-                m.setScale(*v[1])
-                m.reparentTo(cursor)
+            cursor = LineNodePath()
+            lines = [[Point3(-0.5, 0, 0), Point3(0.5, 0, 0)],
+                     [Point3(0, 0, -0.5), Point3(0, 0, 0.5)]]
+            cursor.drawLines(lines)
+            cursor.setThickness(1)
+            cursor.create()
+            # cursor = NodePath("cross")
+            # S = {"cylinderX.bam": ((0., 0., 0.), (1., 0.1, 0.1)),
+            #      "cylinderY.bam": ((0., 0., 0.), (0.1, 1., 0.1)),
+            #      "cylinderZ.bam": ((0., 0., 0.), (0.1, 0.1, 1.))}
+            # for k, v in S.iteritems():
+            #     m = self._load(k)
+            #     m.setName(k)
+            #     m.setPos(*v[0])
+            #     m.setScale(*v[1])
+            #     m.reparentTo(cursor)
+        #BP()
         return cursor
 
     def create_mark(self, color):
@@ -125,7 +134,7 @@ class Picker(Viewer):
         self.contact_bottoms = None
         self.connectors = None
         self.removeTask("mouse1")
-        self.removeTask("mouse3")        
+        self.removeTask("mouse3")
 
     def goto_sso(self, *args, **kwargs):
         self.clear_attachments()
@@ -229,7 +238,7 @@ class Picker(Viewer):
     def show_marked(self, node, f_on):
         """ Turns on/off marked graphic."""
         if f_on:
-            extent = Vec3(0.2, 0.2, 0.2)
+            extent = Vec3(0.15, 0.15, 0.15)
             name = "mark"
             self.mark = self._make_mark(node, extent, name)
             self.mark.init_tree(tags=("model",))
@@ -257,7 +266,7 @@ class Picker(Viewer):
         if f_on:
             parent = self.contact_bottoms[ij]
             points = self.contact_points[ij]
-            extent = Vec3(0.3, 0.3, 0.3)
+            extent = Vec3(0.15, 0.15, 0.15)
             name = "connector_%d-%d" % ij
             self.connectors[ij] = self._make_connector(parent, points,
                                                        extent, name)
