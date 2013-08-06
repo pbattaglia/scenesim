@@ -39,7 +39,7 @@ class Picker(Viewer):
                                   Vec4(1., 0.5, 0.1, 1.),
                                   Vec4(1., 1., 1., 1.))
         self.max_attach = 999
-        self.permanent_events += ["mouse1", "mouse3"]
+        self.permanent_events += ["mouse1"]  #, "mouse3"]
         # Make cursor dot.
         self.cursor = self._build_cursor("cross")
         s = 0.08
@@ -116,7 +116,7 @@ class Picker(Viewer):
             obj.setTag("pickable", str(i))
         # Add mouse events.
         self.accept("mouse1", self.clicked, extraArgs=[1])
-        self.accept("mouse3", self.clicked, extraArgs=[2])
+        # self.accept("mouse3", self.clicked, extraArgs=[2])
         # Start contact detector.
         detector = ContactDetector(self.bbase.world, self.scene,
                                    margin=self.contact_margin)
@@ -186,11 +186,16 @@ class Picker(Viewer):
                     ij = tuple(sorted((self.contact_bodies.index(pair[0]),
                                        self.contact_bodies.index(pair[1]))))
                     if ij in self.contacts:
-                        f_add = button == 1
-                        self.store_attachment(ij, pair, f_add)
-                        self.show_marked(self.marked, False)
-                        self.marked = None
-                        event = "attach" if f_add else "detach"
+                        f_add = (ij, pair) not in self.attached_pairs
+                        if (not f_add or
+                            len(self.attached_pairs) < self.max_attach):
+                            self.store_attachment(ij, pair, f_add)
+                            self.show_marked(self.marked, False)
+                            self.marked = None
+                            event = "attach" if f_add else "detach"
+                        else:
+                            print("Max attachments already reached.")
+                            event = "max-attach"                            
                     else:
                         event = "non-contact"
             else:
@@ -200,11 +205,9 @@ class Picker(Viewer):
     def store_attachment(self, ij, pair, f_add):
         """ Stores the attached objects, and draws them."""
         if f_add:
-            if (len(self.attached_pairs) < self.max_attach and
-                (ij, pair) not in self.attached_pairs):
-                self.attached_pairs.add((ij, pair))
-                self.show_attachment(ij, True)
-                self.attach_pair(pair, True)
+            self.attached_pairs.add((ij, pair))
+            self.show_attachment(ij, True)
+            self.attach_pair(pair, True)
         else:
             try:
                 self.attached_pairs.remove((ij, pair))
