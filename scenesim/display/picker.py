@@ -5,7 +5,7 @@ import numpy as np
 from panda3d.core import (CollisionHandlerQueue, CollisionNode, CollisionRay,
                           CollisionTraverser, GeomNode, NodePath,
                           RenderModeAttrib, TransparencyAttrib)
-
+#
 from scenesim.display.viewer import Viewer
 from scenesim.objects.gso import GSO
 from scenesim.objects.pso import PSO
@@ -39,7 +39,7 @@ class Picker(Viewer):
                                   Vec4(1., 0.5, 0.1, 1.),
                                   Vec4(1., 1., 1., 1.))
         self.max_attach = 999
-        self.permanent_events += ["mouse1"]  #, "mouse3"]
+        self.permanent_events += ["mouse1"]
         # Make cursor dot.
         self.cursor = self._build_cursor("cross")
         s = 0.08
@@ -116,7 +116,6 @@ class Picker(Viewer):
             obj.setTag("pickable", str(i))
         # Add mouse events.
         self.accept("mouse1", self.clicked, extraArgs=[1])
-        # self.accept("mouse3", self.clicked, extraArgs=[2])
         # Start contact detector.
         detector = ContactDetector(self.bbase.world, self.scene,
                                    margin=self.contact_margin)
@@ -132,9 +131,7 @@ class Picker(Viewer):
         self.contact_bodies = None
         self.contact_points = None
         self.contact_bottoms = None
-        self.connectors = None
         self.removeTask("mouse1")
-        self.removeTask("mouse3")
 
     def goto_sso(self, *args, **kwargs):
         self.clear_attachments()
@@ -195,7 +192,7 @@ class Picker(Viewer):
                             event = "attach" if f_add else "detach"
                         else:
                             print("Max attachments already reached.")
-                            event = "max-attach"                            
+                            event = "max-attach"
                     else:
                         event = "non-contact"
             else:
