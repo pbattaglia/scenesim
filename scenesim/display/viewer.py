@@ -82,6 +82,8 @@ class Viewer(ShowBase, object):
         self.accept("0", self.reset_sso)
         self.accept("arrow_left", self.prev)
         self.accept("arrow_right", self.next)
+        self.accept("page_down", self.prev, [100])
+        self.accept("page_up", self.next, [100])
         self.accept("f1", self.toggle_debug)
         self.accept("o", self.physics_once, extraArgs=[1. / 10])
         self.accept("i", self.physics_once, extraArgs=[1. / 10000])
@@ -382,14 +384,14 @@ class Viewer(ShowBase, object):
         self.bbase.remove(self.scene.descendants(type_=PSO))
         self.scene.destroy_tree(tags=("shape",))
 
-    def prev(self):
+    def prev(self, steps=1):
         """ Task: Go back one SSO."""
-        i = max(0, self.ssos.index(self.sso) - 1)
+        i = max(0, self.ssos.index(self.sso) - steps)
         self.goto_sso(i)
 
-    def next(self):
+    def next(self, steps=1):
         """ Task: Go forward one SSO."""
-        i = min(self.n_ssos - 1, self.ssos.index(self.sso) + 1)
+        i = min(self.n_ssos - 1, self.ssos.index(self.sso) + steps)
         self.goto_sso(i)
 
     def _get_elapsed(self):
