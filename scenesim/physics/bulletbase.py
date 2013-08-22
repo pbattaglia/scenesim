@@ -391,14 +391,12 @@ class BulletBase(object):
             bodies, vecpos, dur = force
             dt0 = np.clip(dur, 0., dt)
             n_subs0 = int(np.ceil(n_subs * dt0 / dt))
-            size_sub0 = size_sub * dt0 / dt
             dt1 = dt - dt0
-            n_subs1 = n_subs - n_subs0
-            size_sub1 = size_sub - size_sub0
+            n_subs1 = n_subs - n_subs0 + 1
             for body in bodies:
                 body.applyForce(Vec3(*vecpos[0]), Point3(*vecpos[1]))
             # With force.
-            self.world.doPhysics(dt0, n_subs0, size_sub0)
+            self.world.doPhysics(dt0, n_subs0, size_sub)
             for body in bodies:
                 body.clearForces()
         else:
@@ -406,7 +404,7 @@ class BulletBase(object):
             n_subs1 = n_subs
             size_sub1 = size_sub
         # With no force.
-        self.world.doPhysics(dt1, n_subs1, size_sub1)
+        self.world.doPhysics(dt1, n_subs1, size_sub)
 
     @staticmethod
     def attenuate_velocities(bodies, linvelfac=0., angvelfac=0.):
