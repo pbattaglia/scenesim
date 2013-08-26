@@ -402,7 +402,6 @@ class BulletBase(object):
         else:
             dt1 = dt
             n_subs1 = n_subs
-            size_sub1 = size_sub
         # With no force.
         self.world.doPhysics(dt1, n_subs1, size_sub)
 
