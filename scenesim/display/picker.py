@@ -1,16 +1,19 @@
 """ Picker: view and click objects in a scene."""
+from itertools import izip
+##
 from direct.directtools.DirectGeometry import LineNodePath
-from libpanda import Point3, Vec3, Vec4
+from libpanda import BitMask32, Point3, Vec3, Vec4
+import networkx as nx
 import numpy as np
 from panda3d.core import (CollisionHandlerQueue, CollisionNode, CollisionRay,
                           CollisionTraverser, GeomNode, NodePath,
-                          RenderModeAttrib, TransparencyAttrib)
+                          RenderModeAttrib, TransformState, TransparencyAttrib)
 #
 from scenesim.display.viewer import Viewer
 from scenesim.objects.gso import GSO
-from scenesim.objects.pso import PSO
+from scenesim.objects.pso import BShapeManager, PSO, RBSO
 from scenesim.physics.bulletbase import JointManager
-from scenesim.physics.contact import ContactDetector, Parser
+from scenesim.physics.contact import ContactDetector, Parser, powerset
 #
 from pdb import set_trace as BP
 
@@ -30,6 +33,8 @@ class Picker(Viewer):
         self.parser = None
         self.marked = None
         self.attached_pairs = set()
+        self.compound_components = []
+        self.compound_objects = []
         self.joints = JointManager()
         self.wire_attrib = RenderModeAttrib.make(
             RenderModeAttrib.MWireframe, 4.)
@@ -224,6 +229,8 @@ class Picker(Viewer):
             self.attach_pair(pair, False)
             self.show_attachment(ij, False)
         self.attached_pairs = set()
+        #
+        self.reset_compounds()
 
     def _make_mark(self, node, extent, name):
         """ Makes a mark GSO."""
@@ -274,13 +281,101 @@ class Picker(Viewer):
         else:
             self.connectors.pop(ij).removeNode()
 
+    # def attach_pair(self, pair, f_on):
+    #     """ Adds/removes physical attachment between a pair of nodes."""
+    #     key = tuple(sorted(p.node() for p in pair))
+    #     # key = frozenset(pair)
+    #     if f_on:
+    #         # Create the joint and add it.
+    #         self.joints[key] = self.joints.make_fixed(*pair)
+    #     else:
+    #         # Remove it.
+    #         del self.joints[key]
+
+    def attach_physics(self):
+        # Attach `self.scene` to the physics world.
+        try:
+            exclude = zip(*self.compound_components)[0]
+        except IndexError:
+            exclude = []
+        bnodes = [bnode for bnode in self.scene.descendants(type_=PSO)
+                  if bnode not in exclude]
+        for bnode in bnodes:
+            bnode.init_resources(tags=("shape",))
+            bnode.setCollideMask(BitMask32.allOn())
+            bnode.node().setDeactivationEnabled(False)
+        self.bbase.attach(bnodes)
+
+    def reset_compounds(self):
+        for n, p in self.compound_components:
+            n.wrtReparentTo(p)
+        self.compound_components = []
+        for cnode in self.compound_objects:
+            cnode.destroy_resources()
+            cnode.removeNode()
+        self.compound_objects = []
+
+    def make_attachment_graph(self):
+        n = len(self.contact_bodies)
+        mtx = np.zeros((n, n), dtype="i")
+        for (i, j), _ in self.attached_pairs:
+            # i = self.contact_bodies.index(pair[0])
+            # j = self.contact_bodies.index(pair[1])
+            mtx[i, j] = 1
+            # mtx[j, i] = 1
+        graph = nx.from_numpy_matrix(mtx)
+        return graph
+
     def attach_pair(self, pair, f_on):
         """ Adds/removes physical attachment between a pair of nodes."""
-        key = tuple(sorted(p.node() for p in pair))
-        # key = frozenset(pair)
-        if f_on:
-            # Create the joint and add it.
-            self.joints[key] = self.joints.make_fixed(*pair)
-        else:
-            # Remove it.
-            del self.joints[key]
+        if not f_on:
+            return
+        graph = self.make_attachment_graph()
+        sgs = [sg for sg in nx.connected_components(graph) if len(sg) > 1]
+        self.reset_compounds()
+        for sg in sgs:
+            ccs = [self.contact_bodies[i] for i in sg]
+            parents = [c.getParent() for c in ccs]
+            self.compound_components.extend(zip(ccs, parents))
+            cname = "+".join([str(i) for i in sorted(sg)])
+            cnode = RBSO(cname)
+            cnode.reparentTo(self.scene)
+            poses = []
+            masses = []
+            for n in ccs:
+                poses.append(n.getPos(self.scene))
+                masses.append(n.get_mass())
+            masses = np.array(masses)
+            if np.any(masses == 0.):
+                mass = 0.
+                com = poses[np.flatnonzero(masses == 0.)[0]]
+            else:
+                mass = np.sum(masses)
+                com = np.sum(np.array(poses).T * masses, axis=-1) / mass
+            cnode.set_mass(mass)
+            cnode.setPos(self.scene, Vec3(*com))
+
+            shapes = []
+            for n in ccs:
+                n.wrtReparentTo(cnode)
+                name, parm0, xform0 = BShapeManager._safe_set1(n.get_shape())
+                if name != "Box":
+                    print("Can't handle that shape: %s" % name)
+                    BP()
+                scale = n.getScale(cnode)
+                parm0 = BShapeManager.parameters[name]["HalfExtentsWithMargin"]
+                parm1 = (Vec3(*[s * p for s, p in izip(scale, parm0)]),)
+                pos = n.getPos(cnode)
+                quat = n.getQuat(cnode)
+                ones = Vec3(1, 1, 1)
+                T = TransformState.makePosQuatScale(pos, quat, ones)
+                xform1 = T.compose(xform0)
+                shape = (name, parm1, xform1)
+                shapes.append(shape)
+                # Destroy compound component shapes.
+                n.destroy_resources(tags=("shape",))
+            # Initialize compound object shapes.
+            cnode.set_shape(shapes)
+            # cnode.init_resources(tags=("shape",))
+            # cnode.init_tree(tags=("model",))
+            self.compound_objects.append(cnode)

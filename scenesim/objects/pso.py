@@ -60,7 +60,8 @@ class BShapeManager(list):
     def insert(self, key, val):
         super(self.__class__, self).insert(key, self._safe_set1(val))
 
-    def _safe_set1(self, X):
+    @classmethod
+    def _safe_set1(cls, X):
         """ Standardizes 1-element X."""
         if X == "":
             S = ("",)
@@ -74,11 +75,11 @@ class BShapeManager(list):
             # Make X into tuple S.
             S = tuple(X)
         # Check that the shape is valid.
-        if S[0] not in ("",) + tuple(self.parameters):
+        if S[0] not in ("",) + tuple(cls.parameters):
             raise ValueError("Bad shape: %s" % S[0])
         if S[0]:
             # Make xform a TransformState.
-            xform = self._xform(S[2])
+            xform = cls._xform(S[2])
             if xform is None:
                 raise ValueError("Bad xform: %s" % str(S[2]))
             shape = (S[0], S[1], xform)
@@ -107,7 +108,8 @@ class BShapeManager(list):
             shape.append(s)
         return shape
 
-    def _xform(self, T):
+    @classmethod
+    def _xform(cls, T):
         """ Converts T into a valid xform. Returns None on fail."""
         # If T has "flat" attribute, it is an ndarray and that should
         # be returned. Otherwise just return T.
@@ -124,6 +126,7 @@ class BShapeManager(list):
                 xform = T
         return xform
 
+    @classmethod
     def read_node(cls, node):
         """ Gets 'shape' from Bullet*Shape(s)."""
         # Get valid node.
