@@ -3,10 +3,10 @@ import cPickle as pickle
 from collections import Iterable
 from functools import partial
 from itertools import izip
-
+##
 from pandac.PandaModules import NodePath, NodePathCollection, PandaNode
 from path import path
-
+##
 from scenesim.lib import combomethod
 
 
@@ -211,7 +211,8 @@ class SSO(NodePath):
     def descendants(self, depths=slice(None), type_=None, names=None):
         """ Returns a list of descendants of this node. All if 'depth' is
         None, down to 'depths' (if int), only at 'depth' levels (if
-        Iterable), or in a range (if slice)."""
+        Iterable), or in a range (if slice). `type_` and `names` are
+        used to filter out unwanted nodes."""
         # Filter out those that don't meet 'depth' criteria.
         # Different in/out test depending on 'depth'.
         if isinstance(depths, slice):
@@ -220,11 +221,12 @@ class SSO(NodePath):
             rng = xrange(depths + 1)
         else:
             rng = depths
-
         # Get all descendants. Filter type_ and names.
         dsc = [n for n in (self.from_tag(node)
                            for node in self.findAllMatches("**"))
                if self._filter(n, type_, names) and n.getNumNodes() - 1 in rng]
+        # Sort by node name.
+        dsc.sort(key=NodePath.getName)
         return dsc
 
     def tree(self):
