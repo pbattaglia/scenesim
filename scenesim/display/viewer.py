@@ -7,7 +7,7 @@ from direct.showbase.ShowBase import ShowBase
 from libpanda import AntialiasAttrib, BitMask32, PerspectiveLens, Point3, Vec3
 from numpy import array
 from panda3d.bullet import BulletRigidBodyNode
-from panda3d.core import WindowProperties
+from panda3d.core import ConfigVariableBool, WindowProperties
 from pandac.PandaModules import AmbientLight, NodePath, Spotlight
 from path import path
 
@@ -26,7 +26,10 @@ class Viewer(ShowBase, object):
     def __init__(self):
         # ShowBase init.
         ShowBase.__init__(self)
-        self.win_size = (800, 800)
+
+        resize_window = ConfigVariableBool('viewer-resize-window', '#t')
+        if resize_window.getValue():
+            self.win_size = (800, 800)
         # Black background
         self.win.setClearColor((0.0, 0.0, 0.0, 1.0))
         # Set up lights.
@@ -54,7 +57,9 @@ class Viewer(ShowBase, object):
         self.render.setLight(alnp)
         self.lights.reparentTo(self.render)
         # Set auto shading for shadows
-        self.render.setShaderAuto()
+        use_shaders = ConfigVariableBool('viewer-use-shaders', '#t')
+        if use_shaders.getValue():
+            self.render.setShaderAuto()
         # Set antialiasing on
         self.render.setAntialias(AntialiasAttrib.MAuto)
         # Camera
