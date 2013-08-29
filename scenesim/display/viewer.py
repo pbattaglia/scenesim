@@ -72,7 +72,6 @@ class Viewer(ShowBase, object):
         self.camera.reparentTo(self.cameras)
         # Adjust the camera's lens
         lens = PerspectiveLens()
-        self.cam.node().setLens(lens)
         self.camLens = lens
         self.camLens.setNearFar(0.01, 1000.0)
         #
