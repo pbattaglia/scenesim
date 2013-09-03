@@ -1,13 +1,15 @@
 """ Physics objects."""
 from collections import Iterable, OrderedDict
+from contextlib import contextmanager
 from ctypes import c_float
 from functools import wraps
 from itertools import izip
-
+##
+import numpy as np
 import panda3d.bullet as p3b
-from libpanda import Mat4, TransformState, Vec3
+from libpanda import Mat4, Point3, TransformState, Vec3
 from panda3d.bullet import BulletBodyNode, BulletGhostNode, BulletRigidBodyNode
-
+##
 from scenesim.objects.sso import SSO
 
 
@@ -183,7 +185,7 @@ class BShapeManager(list):
 
 
 class PSO(SSO):
-    """ Bullet physics state."""
+    """ Bullet physics object."""
 
     type_ = BulletBodyNode
     _prop_tags = ("friction", "restitution", "shape", "deactivation_enabled")
@@ -258,6 +260,80 @@ class PSO(SSO):
     @wraps(type_.is_deactivation_enabled, assigned=("__name__", "__doc__"))
     def get_deactivation_enabled(self):
         return self.node().is_deactivation_enabled()
+
+
+class CPSO(PSO):
+    """ Bullet physics object, specialized for compound shapes."""
+
+    def __init__(self, *args, **kwargs):
+        if len(args) == 0:
+            args = ("compound",)
+        super(CPSO, self).__init__(*args, **kwargs)
+        self._shapes = []
+
+    @contextmanager
+    def _keep_child_tranforms(self):
+        """ Remember transforms of existing children to avoid
+        center-of-mass shift."""
+        parent = self.getParent()
+        descendants = self.descendants(depth=[1])
+        # Remember child transforms.
+        mats = [child.get_mat(parent) for child in descendants]
+        yield parent
+        # Update transforms of existing children.
+        for descendant, mat in izip(descendants, mats):
+            descendant.set_mat(parent, mat)
+
+    def _compute_shapes(self):
+        """ Computes shapes from self._psos."""
+        # Compute mass and center-of-mass.
+        masses = []
+        poses = []
+        for pso in self._psos:
+            mass = pso.get_mass()
+            pos = pso.get_pos(self)
+            if mass == 0.:
+                com = pos
+                break
+            poses.append(pos)
+            masses.append(mass)
+        else:
+            mass = np.sum(masses)
+            com = Point3(*(np.sum(np.array(poses).T * masses, axis=-1) / mass))
+        self.set_mass(mass)
+        with self._keep_child_tranforms() as parent:
+            self.set_pos(parent, com)
+        # Add shapes from PSOs.
+        ones = Vec3(1, 1, 1)
+        shapes = []
+        for pso in self._psos:
+            pso.wrtReparentTo(self)
+            name, parm0, xform0 = BShapeManager._safe_set1(pso.get_shape())
+            if name != "Box":
+                print("Can't handle that shape: %s" % name)
+                BP()
+            scale = pso.get_scale(self)
+            parm0 = BShapeManager.parameters[name]["HalfExtentsWithMargin"]
+            parm1 = (Vec3(*[s * p for s, p in izip(scale, parm0)]),)
+            pos = pso.get_pos(self)
+            quat = pso.get_quat(self)
+            T = TransformState.makePosQuatScale(pos, quat, ones)
+            xform1 = T.compose(xform0)
+            shape = (name, parm1, xform1)
+            shapes.append(shape)
+        # Set compound object's shapes tag.
+        self.set_shape(shapes)
+
+    def add(self, psos):
+        """ Add sequence of PSOs to compound object."""
+        self._psos.extend(psos)
+        self._compute_shapes()
+
+    def remove(self, psos):
+        """ Remove sequence of PSOs from compound object."""
+        for pso in psos:
+            self._psos.remove(pso)
+        self._compute_shapes()
 
 
 class RBSO(PSO):
