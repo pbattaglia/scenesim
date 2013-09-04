@@ -269,10 +269,10 @@ class CPSO(PSO):
         if len(args) == 0:
             args = ("compound",)
         super(CPSO, self).__init__(*args, **kwargs)
-        self._shapes = []
+        self.components = []
 
     @contextmanager
-    def _keep_child_tranforms(self):
+    def _preserve_child_tranforms(self):
         """ Remember transforms of existing children to avoid
         center-of-mass shift."""
         parent = self.getParent()
@@ -285,11 +285,11 @@ class CPSO(PSO):
             descendant.set_mat(parent, mat)
 
     def _compute_shapes(self):
-        """ Computes shapes from self._psos."""
+        """ Computes shapes from self.components."""
         # Compute mass and center-of-mass.
         masses = []
         poses = []
-        for pso in self._psos:
+        for pso in self.components:
             mass = pso.get_mass()
             pos = pso.get_pos(self)
             if mass == 0.:
@@ -301,12 +301,12 @@ class CPSO(PSO):
             mass = np.sum(masses)
             com = Point3(*(np.sum(np.array(poses).T * masses, axis=-1) / mass))
         self.set_mass(mass)
-        with self._keep_child_tranforms() as parent:
+        with self._preserve_child_tranforms() as parent:
             self.set_pos(parent, com)
         # Add shapes from PSOs.
         ones = Vec3(1, 1, 1)
         shapes = []
-        for pso in self._psos:
+        for pso in self.components:
             pso.wrtReparentTo(self)
             name, parm0, xform0 = BShapeManager._safe_set1(pso.get_shape())
             if name != "Box":
@@ -326,14 +326,26 @@ class CPSO(PSO):
 
     def add(self, psos):
         """ Add sequence of PSOs to compound object."""
-        self._psos.extend(psos)
+        self.components.extend(psos)
         self._compute_shapes()
 
     def remove(self, psos):
         """ Remove sequence of PSOs from compound object."""
         for pso in psos:
-            self._psos.remove(pso)
+            self.components.remove(pso)
         self._compute_shapes()
+
+    def destroy_component_shapes(self):
+        """ Destroys the shape resources of the component PSOs."""
+        for pso in self.components:
+            pso.destroy_resources(tag=("shape",))
+
+    def init_tree(self, tags=None):
+        """ Overrides parent's init_tree() so that components' shapes are not
+        initialized."""
+        super(CPSO, self).init_tree(tags=tags)
+        if tags is not None and "shape" in tags:
+            self.destroy_component_shapes()
 
 
 class RBSO(PSO):
