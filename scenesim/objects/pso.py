@@ -5,10 +5,11 @@ from ctypes import c_float
 from functools import wraps
 from itertools import izip
 ##
+from libpanda import Mat4, Point3, TransformState, Vec3
 import numpy as np
 import panda3d.bullet as p3b
-from libpanda import Mat4, Point3, TransformState, Vec3
 from panda3d.bullet import BulletBodyNode, BulletGhostNode, BulletRigidBodyNode
+from panda3d.core import NodePathCollection
 ##
 from scenesim.objects.sso import SSO
 
@@ -262,92 +263,6 @@ class PSO(SSO):
         return self.node().is_deactivation_enabled()
 
 
-class CPSO(PSO):
-    """ Bullet physics object, specialized for compound shapes."""
-
-    def __init__(self, *args, **kwargs):
-        if len(args) == 0:
-            args = ("compound",)
-        super(CPSO, self).__init__(*args, **kwargs)
-        self.components = []
-
-    @contextmanager
-    def _preserve_child_tranforms(self):
-        """ Remember transforms of existing children to avoid
-        center-of-mass shift."""
-        parent = self.getParent()
-        descendants = self.descendants(depth=[1])
-        # Remember child transforms.
-        mats = [child.get_mat(parent) for child in descendants]
-        yield parent
-        # Update transforms of existing children.
-        for descendant, mat in izip(descendants, mats):
-            descendant.set_mat(parent, mat)
-
-    def _compute_shapes(self):
-        """ Computes shapes from self.components."""
-        # Compute mass and center-of-mass.
-        masses = []
-        poses = []
-        for pso in self.components:
-            mass = pso.get_mass()
-            pos = pso.get_pos(self)
-            if mass == 0.:
-                com = pos
-                break
-            poses.append(pos)
-            masses.append(mass)
-        else:
-            mass = np.sum(masses)
-            com = Point3(*(np.sum(np.array(poses).T * masses, axis=-1) / mass))
-        self.set_mass(mass)
-        with self._preserve_child_tranforms() as parent:
-            self.set_pos(parent, com)
-        # Add shapes from PSOs.
-        ones = Vec3(1, 1, 1)
-        shapes = []
-        for pso in self.components:
-            pso.wrtReparentTo(self)
-            name, parm0, xform0 = BShapeManager._safe_set1(pso.get_shape())
-            if name != "Box":
-                print("Can't handle that shape: %s" % name)
-                BP()
-            scale = pso.get_scale(self)
-            parm0 = BShapeManager.parameters[name]["HalfExtentsWithMargin"]
-            parm1 = (Vec3(*[s * p for s, p in izip(scale, parm0)]),)
-            pos = pso.get_pos(self)
-            quat = pso.get_quat(self)
-            T = TransformState.makePosQuatScale(pos, quat, ones)
-            xform1 = T.compose(xform0)
-            shape = (name, parm1, xform1)
-            shapes.append(shape)
-        # Set compound object's shapes tag.
-        self.set_shape(shapes)
-
-    def add(self, psos):
-        """ Add sequence of PSOs to compound object."""
-        self.components.extend(psos)
-        self._compute_shapes()
-
-    def remove(self, psos):
-        """ Remove sequence of PSOs from compound object."""
-        for pso in psos:
-            self.components.remove(pso)
-        self._compute_shapes()
-
-    def destroy_component_shapes(self):
-        """ Destroys the shape resources of the component PSOs."""
-        for pso in self.components:
-            pso.destroy_resources(tag=("shape",))
-
-    def init_tree(self, tags=None):
-        """ Overrides parent's init_tree() so that components' shapes are not
-        initialized."""
-        super(CPSO, self).init_tree(tags=tags)
-        if tags is not None and "shape" in tags:
-            self.destroy_component_shapes()
-
-
 class RBSO(PSO):
     type_ = BulletRigidBodyNode
     _prop_tags = ("linear_velocity", "angular_velocity", "mass", "gravity")
@@ -385,6 +300,97 @@ class RBSO(PSO):
     @wraps(type_.get_gravity, assigned=("__name__", "__doc__"))
     def get_gravity(self):
         return self.node().get_gravity()
+
+
+class CPSO(RBSO):
+    """ Bullet physics object, specialized for compound shapes."""
+
+    def __init__(self, *args, **kwargs):
+        if len(args) == 0:
+            args = ("compound",)
+        super(CPSO, self).__init__(*args, **kwargs)
+
+    @property
+    def components(self):
+        return self.descendants(depths=[1], type_=PSO)
+
+    @contextmanager
+    def _preserve_child_tranforms(self):
+        """ Remember transforms of existing children to avoid
+        center-of-mass shift."""
+        parent = self.getParent()
+        descendants = self.descendants(depths=[1])
+        # Remember child transforms.
+        mats = [child.get_mat(parent) for child in descendants]
+        yield parent
+        # Update transforms of existing children.
+        for descendant, mat in izip(descendants, mats):
+            descendant.set_mat(parent, mat)
+
+    def _compute_shapes(self):
+        """ Computes shapes from self.components."""
+        # Compute mass and center-of-mass.
+        masses = []
+        poses = []
+        psos = self.descendants(depths=[1], type_=PSO)
+        parent = self.getParent()
+        for pso in psos:
+            mass = pso.get_mass()
+            pos = pso.get_pos(parent)
+            if mass == 0.:
+                com = pos
+                break
+            poses.append(pos)
+            masses.append(mass)
+        else:
+            mass = np.sum(masses)
+            com = Point3(*(np.sum(np.array(poses).T * masses, axis=-1) / mass))
+        self.set_mass(mass)
+        with self._preserve_child_tranforms() as parent:
+            self.set_pos(parent, com)
+        # Add shapes from PSOs.
+        ones = Vec3(1, 1, 1)
+        shapes = []
+        for pso in psos:
+            name, parm0, xform0 = BShapeManager._safe_set1(pso.get_shape())
+            if name != "Box":
+                print("Can't handle that shape: %s" % name)
+                BP()
+            scale = pso.get_scale(self)
+            parm0 = BShapeManager.parameters[name]["HalfExtentsWithMargin"]
+            parm1 = (Vec3(*[s * p for s, p in izip(scale, parm0)]),)
+            pos = pso.get_pos(self)
+            quat = pso.get_quat(self)
+            T = TransformState.makePosQuatScale(pos, quat, ones)
+            xform1 = T.compose(xform0)
+            shape = (name, parm1, xform1)
+            shapes.append(shape)
+        # Set compound object's shapes tag.
+        self.set_shape(shapes)
+
+    def add(self, psos):
+        """ Add sequence of PSOs to compound object."""
+        NodePathCollection(psos).wrtReparentTo(self)
+        self._compute_shapes()
+
+    def remove(self, psos):
+        """ Remove sequence of PSOs from compound object."""
+        with self._preserve_child_tranforms():
+            NodePathCollection(psos).detach()
+        if self.getNumChildren() > 0:
+            self._compute_shapes()
+
+    def destroy_component_shapes(self):
+        """ Destroys the shape resources of the component PSOs."""
+        for pso in self.components:
+            pso.destroy_resources(tags=("shape",))
+
+    def init_tree(self, tags=None):
+        """ Overrides parent's init_tree() so that components' shapes are not
+        initialized."""
+        super(CPSO, self).init_tree(tags=tags)
+        # if tags is None or "shape" in tags:
+        self.destroy_component_shapes()
 
 
 class GHSO(PSO):

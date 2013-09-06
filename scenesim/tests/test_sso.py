@@ -3,14 +3,15 @@ from contextlib import contextmanager
 from ctypes import c_float
 from itertools import izip
 import random
-
+##
 from libpanda import Mat4, Point3, Quat, TransformState, Vec3, Vec4
+import numpy as np
 from panda3d.bullet import BulletBoxShape, BulletRigidBodyNode, BulletShape
 from pandac.PandaModules import GeomNode, ModelRoot, NodePath, PandaNode
 from path import path
-
+##
 from scenesim.objects.gso import GSO
-from scenesim.objects.pso import GHSO, PSO, RBSO, cast_c_float
+from scenesim.objects.pso import CPSO, GHSO, PSO, RBSO, cast_c_float
 from scenesim.objects.sso import Cache, SSO
 
 
@@ -450,6 +451,103 @@ def test_pso_delete_shape():
     assert obj.node().getNumShapes() == 0
 
 
+def test_cpso_add():
+    c = 3.
+    n = 3
+    cpso = CPSO("foo")
+    objs = [RBSO(str(i)) for i in xrange(n)]
+    for obj in objs:
+        obj.setPos((c * i - c, 0, 0))
+        obj.set_shape("Box")
+    cpso.add(objs)
+    assert len(cpso.getChildren()) == n
+
+
+def test_cpso_remove():
+    c = 3.
+    n = 4
+    cpso = CPSO("foo")
+    objs = [RBSO(str(i)) for i in xrange(n)]
+    for obj in objs:
+        obj.setPos((c * (i - np.floor(n / 2.)), 0, 0))
+        obj.set_shape("Box")
+    cpso.add(objs)
+    assert len(cpso.getChildren()) == n
+    cpso.remove(objs[:-2])
+    assert len(cpso.getChildren()) == 2
+
+
+def test_cpso_init_tree():
+    c = 3.
+    n = 4
+    sso = SSO("parent")
+    cpso = CPSO("foo")
+    cpso.reparentTo(sso)
+    objs = [RBSO(str(i)) for i in xrange(n)]
+    for obj in objs:
+        obj.setPos((c * (i - np.floor(n / 2.)), 0, 0))
+        obj.set_shape("Box")
+    cpso.add(objs)
+    sso.init_tree(tags=("shape",))
+    assert cpso.node().getNumShapes() == n
+    for obj in cpso.components:
+        assert obj.node().getNumShapes() == 0
+
+
+def test_cpso_destroy_component_shapes():
+    c = 3.
+    n = 4
+    cpso = CPSO("foo")
+    objs = [RBSO(str(i)) for i in xrange(n)]
+    for obj in objs:
+        obj.setPos((c * (i - np.floor(n / 2.)), 0, 0))
+        obj.set_shape("Box")
+        obj.init_resources(tags=("shape",))
+    cpso.add(objs)
+    for obj in cpso.components:
+        assert obj.node().getNumShapes() == 1
+    cpso.destroy_component_shapes()
+    for obj in cpso.components:
+        assert obj.node().getNumShapes() == 0
+    
+
+# c = 4.
+# n = 3
+# m0 = 10.
+# sso = SSO("parent")
+# cpso = CPSO("cpso")
+# cpso.set_pos((5, 6, 7))
+# parent = cpso.getParent()
+# objs = [RBSO(str(i)) for i in xrange(n)]
+# for i, obj in enumerate(objs):
+#     m = m0 * (i + 1)
+#     obj.set_mass(m)  # * (i + 1))
+#     x = c * (i - (n - 1) / 2.)
+#     # print x, m
+#     obj.setPos((x, 0, 0))
+#     obj.set_shape("Box")
+#     obj.init_resources(tags=("shape",))
+# print cpso.get_pos(parent), cpso.get_mass(), [obj.get_pos(parent) for obj in objs]
+# print
+# cpso.add(objs)
+# cpso.init_tree()
+# for i in xrange(cpso.node().getNumShapes()):
+#     print i
+#     print cpso.node().getShape(i)
+#     print cpso.node().getShapeMat(i)
+# print
+# print cpso.get_pos(parent), cpso.get_mass(), [obj.get_pos(parent) for obj in objs]
+# cpso.remove(objs[:1])
+# cpso.init_tree()
+# print cpso.get_pos(parent), cpso.get_mass(), [obj.get_pos(parent) for obj in objs]
+# for i in xrange(cpso.node().getNumShapes()):
+#     print i
+#     print cpso.node().getShape(i)
+#     print cpso.node().getShapeMat(i)
+# print
+
+
+        
 def test_bshapemanager():
     pass
 

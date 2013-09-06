@@ -222,9 +222,10 @@ class SSO(NodePath):
         else:
             rng = depths
         # Get all descendants. Filter type_ and names.
+        c = self.getNumNodes()
         dsc = [n for n in (self.from_tag(node)
                            for node in self.findAllMatches("**"))
-               if self._filter(n, type_, names) and n.getNumNodes() - 1 in rng]
+               if self._filter(n, type_, names) and n.getNumNodes() - c in rng]
         # Sort by node name.
         dsc.sort(key=NodePath.getName)
         return dsc
@@ -312,10 +313,11 @@ class SSO(NodePath):
 
     def init_tree(self, tags=None):
         """ Inits this node tree's resources."""
+        self.init_resources(tags=tags)
         # Get all descendants.
-        nodes = self.descendants(type_=SSO)
-        for node in nodes:
-            node.init_resources(tags=tags)
+        descendants = self.descendants(depths=[1], type_=SSO)
+        for node in descendants:
+            node.init_tree(tags=tags)
 
     def destroy_tree(self, tags=None):
         """ Destroys this node tree's resources."""
