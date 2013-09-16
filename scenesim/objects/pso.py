@@ -385,6 +385,10 @@ class CPSO(RBSO):
         for pso in self.components:
             pso.destroy_resources(tags=("shape",))
 
+    def remove_component_bodies(self, bbase):
+        """ Destroys the shape resources of the component PSOs."""
+        bbase.remove(self.components)
+            
     def init_tree(self, tags=None):
         """ Overrides parent's init_tree() so that components' shapes are not
         initialized."""
