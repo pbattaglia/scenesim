@@ -328,8 +328,6 @@ class Picker(Viewer):
 
     def attach_pair(self, pair, f_on):
         """ Adds/removes physical attachment between a pair of nodes."""
-        if not f_on:
-            return
         graph = self.make_attachment_graph()
         sgs = [sg for sg in nx.connected_components(graph) if len(sg) > 1]
         self.reset_compounds()
