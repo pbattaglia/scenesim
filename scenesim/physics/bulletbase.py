@@ -4,7 +4,8 @@ from contextlib import contextmanager
 from functools import update_wrapper
 from itertools import combinations, izip
 from math import isnan, sqrt
-
+from warnings import warn
+##
 from libpanda import BitMask32, Point3, Quat, Vec3
 import numpy as np
 from panda3d.bullet import (BulletBaseCharacterControllerNode, BulletBodyNode,
@@ -13,7 +14,7 @@ from panda3d.bullet import (BulletBaseCharacterControllerNode, BulletBodyNode,
                             BulletVehicle, BulletWorld)
 from panda3d.core import PythonCallbackObject, TransformState
 from pandac.PandaModules import NodePath
-
+##
 from pdb import set_trace as BP
 
 
@@ -21,6 +22,10 @@ nan = float("nan")
 
 
 class BulletBaseError(Exception):
+    pass
+
+
+class DeactivationEnabledWarning(UserWarning):
     pass
 
 
@@ -295,7 +300,7 @@ class BulletBase(object):
         for body in self.bodies:
             self._constrain_axis(body)
 
-    def attach(self, objs):
+    def attach(self, objs, suppress_deact_warn=False):
         """ Attach Bullet objects to the world."""
         if not self.world:
             raise BulletBaseError("No BulletWorld initialized.")
@@ -314,6 +319,11 @@ class BulletBase(object):
         bw_objs = set(bw_objs) - set(self.bodies)
         # Attach them.
         for obj in bw_objs:
+            # Warn about deactivation being enabled.
+            if (not suppress_deact_warn and
+                getattr(obj, "isDeactivationEnabled", lambda: True)()):
+                msg = "Deactivation is enabled on object: %s" % obj
+                warn(msg, DeactivationEnabledWarning)
             # Apply existing axis constraints to the objects.
             self._constrain_axis(obj)
             # Attach the objects to the world.
