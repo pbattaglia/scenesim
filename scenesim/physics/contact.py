@@ -208,13 +208,12 @@ class Detector(object):
 
 class ContactDetector(Detector):
 
-    def __init__(self, world, scene, margin=None, type_=PSO, names=None):
+    def __init__(self, world, scene, margin=(0.01, 0.01, 0.01), type_=PSO,
+                 names=None):
         self.scene = scene
         self.top = self.scene.getTop()
         # Store initial state.
         self.cache = self.scene.store_tree()
-        if margin is None:
-            margin = (0.01, 0.01, 0.01)
         self.margin = Vec3(*margin)
         bodies = self.scene.descendants(type_=type_, names=names)
         super(ContactDetector, self).__init__(world, bodies)

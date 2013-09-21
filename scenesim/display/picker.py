@@ -8,13 +8,13 @@ import numpy as np
 from panda3d.core import (CollisionHandlerQueue, CollisionNode, CollisionRay,
                           CollisionTraverser, GeomNode, NodePath,
                           RenderModeAttrib, TransformState, TransparencyAttrib)
-#
+##
 from scenesim.display.viewer import Viewer
 from scenesim.objects.gso import GSO
-from scenesim.objects.pso import BShapeManager, PSO, RBSO
+from scenesim.objects.pso import BShapeManager, CPSO, PSO, RBSO
 from scenesim.physics.bulletbase import JointManager
 from scenesim.physics.contact import ContactDetector, Parser, powerset
-#
+##
 from pdb import set_trace as BP
 
 
@@ -316,6 +316,8 @@ class Picker(Viewer):
         self.compound_objects = []
 
     def make_attachment_graph(self):
+        if self.contact_bodies:
+            return None
         n = len(self.contact_bodies)
         mtx = np.zeros((n, n), dtype="i")
         for (i, j), _ in self.attached_pairs:
@@ -328,52 +330,19 @@ class Picker(Viewer):
 
     def attach_pair(self, pair, f_on):
         """ Adds/removes physical attachment between a pair of nodes."""
+        # Get the connected subgroups.
         graph = self.make_attachment_graph()
         sgs = [sg for sg in nx.connected_components(graph) if len(sg) > 1]
-        self.reset_compounds()
+        self.reset_compounds() #X
+        # Iterate over subgroups, creating compound shapes.
         for sg in sgs:
-            ccs = [self.contact_bodies[i] for i in sg]
-            parents = [c.getParent() for c in ccs]
-            self.compound_components.extend(zip(ccs, parents))
+            nodes = [self.contact_bodies[i] for i in sg]
+            parents = [c.getParent() for c in nodes]
+            self.compound_components.extend(zip(nodes, parents))
             cname = "+".join([str(i) for i in sorted(sg)])
-            cnode = RBSO(cname)
+            cnode = CPSO(cname)
             cnode.reparentTo(self.scene)
-            poses = []
-            masses = []
-            for n in ccs:
-                poses.append(n.getPos(self.scene))
-                masses.append(n.get_mass())
-            masses = np.array(masses)
-            if np.any(masses == 0.):
-                mass = 0.
-                com = poses[np.flatnonzero(masses == 0.)[0]]
-            else:
-                mass = np.sum(masses)
-                com = np.sum(np.array(poses).T * masses, axis=-1) / mass
-            cnode.set_mass(mass)
-            cnode.setPos(self.scene, Vec3(*com))
-
-            shapes = []
-            for n in ccs:
-                n.wrtReparentTo(cnode)
-                name, parm0, xform0 = BShapeManager._safe_set1(n.get_shape())
-                if name != "Box":
-                    print("Can't handle that shape: %s" % name)
-                    BP()
-                scale = n.getScale(cnode)
-                parm0 = BShapeManager.parameters[name]["HalfExtentsWithMargin"]
-                parm1 = (Vec3(*[s * p for s, p in izip(scale, parm0)]),)
-                pos = n.getPos(cnode)
-                quat = n.getQuat(cnode)
-                ones = Vec3(1, 1, 1)
-                T = TransformState.makePosQuatScale(pos, quat, ones)
-                xform1 = T.compose(xform0)
-                shape = (name, parm1, xform1)
-                shapes.append(shape)
-                # Destroy compound component shapes.
-                n.destroy_resources(tags=("shape",))
-            # Initialize compound object shapes.
-            cnode.set_shape(shapes)
-            # cnode.init_resources(tags=("shape",))
-            # cnode.init_tree(tags=("model",))
+            cnode.add(nodes)
+            cnode.init_tree(tags=("shape",))
+            cnode.destroy_component_shapes()
             self.compound_objects.append(cnode)
