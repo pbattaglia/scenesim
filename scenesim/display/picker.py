@@ -27,12 +27,12 @@ class Picker(Viewer):
         self.disableMouse()
         # Picker stuff.
         self.contact_margin = Vec3(0.01, 0.01, 0.01)
-        self.contacts = None
-        self.contact_points = None
-        self.contact_bottoms = None
         self.parser = None
         self.marked = None
         self.attached_pairs = set()
+        self.contacts = None
+        self.contact_points = None
+        self.contact_bottoms = None
         self.compound_components = []
         self.compound_objects = []
         self.joints = JointManager()
@@ -132,10 +132,6 @@ class Picker(Viewer):
         self.connectors = {}
 
     def stop_picker(self):
-        self.contacts = None
-        self.contact_bodies = None
-        self.contact_points = None
-        self.contact_bottoms = None
         self.removeTask("mouse1")
 
     def goto_sso(self, *args, **kwargs):
@@ -228,9 +224,14 @@ class Picker(Viewer):
         for ij, pair in self.attached_pairs:
             self.attach_pair(pair, False)
             self.show_attachment(ij, False)
-        self.attached_pairs = set()
+        self.attached_pairs = set()        
         #
         self.reset_compounds()
+        self.contacts = None
+        self.contact_bodies = None
+        self.contact_points = None
+        self.contact_bottoms = None
+        
 
     def _make_mark(self, node, extent, name):
         """ Makes a mark GSO."""
