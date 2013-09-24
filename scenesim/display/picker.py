@@ -316,7 +316,7 @@ class Picker(Viewer):
         self.compound_objects = []
 
     def make_attachment_graph(self):
-        if self.contact_bodies:
+        if not self.contact_bodies:
             return None
         n = len(self.contact_bodies)
         mtx = np.zeros((n, n), dtype="i")
