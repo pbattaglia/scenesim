@@ -1,19 +1,18 @@
 """ Picker: view and click objects in a scene."""
-from itertools import izip
 ##
 from direct.directtools.DirectGeometry import LineNodePath
 from libpanda import BitMask32, Point3, Vec3, Vec4
 import networkx as nx
 import numpy as np
 from panda3d.core import (CollisionHandlerQueue, CollisionNode, CollisionRay,
-                          CollisionTraverser, GeomNode, NodePath,
-                          RenderModeAttrib, TransformState, TransparencyAttrib)
+                          CollisionTraverser, GeomNode,
+                          RenderModeAttrib, TransparencyAttrib)
 ##
 from scenesim.display.viewer import Viewer
 from scenesim.objects.gso import GSO
-from scenesim.objects.pso import BShapeManager, CPSO, PSO, RBSO
+from scenesim.objects.pso import CPSO, PSO
 from scenesim.physics.bulletbase import JointManager
-from scenesim.physics.contact import ContactDetector, Parser, powerset
+from scenesim.physics.contact import ContactDetector, Parser
 ##
 from pdb import set_trace as BP
 
@@ -185,8 +184,8 @@ class Picker(Viewer):
                                        self.contact_bodies.index(pair[1]))))
                     if ij in self.contacts:
                         f_add = (ij, pair) not in self.attached_pairs
-                        if (not f_add or
-                            len(self.attached_pairs) < self.max_attach):
+                        if (not f_add or len(self.attached_pairs) <
+                            self.max_attach):
                             self.store_attachment(ij, pair, f_add)
                             self.show_marked(self.marked, False)
                             self.marked = None
@@ -224,14 +223,13 @@ class Picker(Viewer):
         for ij, pair in self.attached_pairs:
             self.attach_pair(pair, False)
             self.show_attachment(ij, False)
-        self.attached_pairs = set()        
+        self.attached_pairs = set()
         #
         self.reset_compounds()
         self.contacts = None
         self.contact_bodies = None
         self.contact_points = None
         self.contact_bottoms = None
-        
 
     def _make_mark(self, node, extent, name):
         """ Makes a mark GSO."""
@@ -334,7 +332,7 @@ class Picker(Viewer):
         # Get the connected subgroups.
         graph = self.make_attachment_graph()
         sgs = [sg for sg in nx.connected_components(graph) if len(sg) > 1]
-        self.reset_compounds() #X
+        self.reset_compounds()
         # Iterate over subgroups, creating compound shapes.
         for sg in sgs:
             nodes = [self.contact_bodies[i] for i in sg]
