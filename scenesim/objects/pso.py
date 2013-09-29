@@ -1,4 +1,5 @@
 """ Physics objects."""
+from abc import ABCMeta, abstractmethod
 from collections import Iterable, OrderedDict
 from contextlib import contextmanager
 from ctypes import c_float
@@ -26,13 +27,13 @@ def cast_c_float(func):
 
 class BaseShape(list):
     """ Base class for shape objects."""
-
+    __metaclass__ = ABCMeta
     _type_rx = re.compile("Bullet(.+)Shape")
 
     def __new__(cls, *args, **kwargs):
         """ Set cls._bshape by reading from bases of derived class."""
         obj = super(BaseShape, cls).__new__(cls)
-        cls.name = cls._type_rx.match(cls.bshape.__name__).group(1)
+        cls.name = cls.read_name(cls.bshape)
         return obj
 
     @classmethod
@@ -62,7 +63,7 @@ class BaseShape(list):
         return xform
 
     @classmethod
-    def fix_prms(cls, p):
+    def _fix_prms(cls, p):
         """ Standardizes parameters."""
         if not isinstance(p, Iterable) or isinstance(p, str) or len(p) > 2:
             raise ValueError("Bad input: %s" % p)
@@ -78,7 +79,7 @@ class BaseShape(list):
 
     def __init__(self, *prms):
         """ Initialize."""
-        prms = self.fix_prms(prms)
+        prms = self._fix_prms(prms)
         super(BaseShape, self).__init__(prms)
 
     def init(self):
@@ -87,22 +88,6 @@ class BaseShape(list):
         bshape = self.bshape(*args)
         return bshape, xform
 
-    def scale(self, scale):
-        """ Scale shape's args by `scale`."""
-        raise NotImplementedError("Derived class must implement this.")
-
-    def shift(self, pos, quat):
-        """ Translate and rotate a shape's args by `pos` and `quat`."""
-        raise NotImplementedError("Derived class must implement this.")
-
-    def transform(self, node, other=None):
-        """ Shift and scale the shape by node's transform."""
-        scale = node.get_scale(other)
-        pos = node.get_pos(other)
-        quat = node.get_quat(other)
-        self.scale(scale)
-        self.shift(pos, quat)
-
     @classmethod
     def read_name(cls, bshape):
         return cls._type_rx.match(bshape.__name__).group(1)
@@ -110,6 +95,28 @@ class BaseShape(list):
     @classmethod
     def read_params(cls, bshape):
         return [getattr(bshape, "get%s" % key)() for key in cls.args0]
+
+    @abstractmethod
+    def scale(self, scale):
+        """ Scales shape arguments."""
+        pass
+
+    def shift(self, pos=(0, 0, 0), quat=(1, 0, 0, 0)):
+        """ Translate and rotate shape's transform."""
+        ones = Vec3(1, 1, 1)
+        T = TransformState.makePosQuatScale(pos, quat, ones)
+        xform = T.compose(self[1])
+        self[1] = xform
+
+    def transform(self, node, other=None):
+        """ Shift and scale the shape by node's transform."""
+        if other is None:
+            other = node.getParent()
+        scale = node.get_scale(other)
+        pos = node.get_pos(other)
+        quat = node.get_quat(other)
+        self.scale(scale)
+        self.shift(pos=pos, quat=quat)
 
 
 class BoxShape(BaseShape):
@@ -121,17 +128,17 @@ class BoxShape(BaseShape):
         args = (Vec3(*[s * a for s, a in izip(scale, self[0][0])]),)
         self[0] = args
 
-    def shift(self, pos, quat):
-        ones = Vec3(1, 1, 1)
-        T = TransformState.makePosQuatScale(pos, quat, ones)
-        xform = T.compose(self[1])
-        self[1] = xform
-
 
 class CapsuleShape(BaseShape):
     """ BulletCapsuleShape."""
     bshape = p3b.BulletCapsuleShape
     args0 = OrderedDict((("Radius", 0.5), ("HalfHeight", 0.5)))
+
+    def scale(self, scale):
+        if scale[0] != scale[1]:
+            raise ValueError("%s does not support anisotropic x,y scaling" %
+                             self.bshape)
+        self[0] = (scale[0] * self[0][0], scale[2] * self[0][1])
 
 
 class ConeShape(BaseShape):
@@ -139,11 +146,23 @@ class ConeShape(BaseShape):
     bshape = p3b.BulletConeShape
     args0 = OrderedDict((("Radius", 0.5), ("Height", 1.)))
 
+    def scale(self, scale):
+        if scale[0] != scale[1]:
+            raise ValueError("%s does not support anisotropic x,y scaling" %
+                             self.bshape)
+        self[0] = (scale[0] * self[0][0], scale[2] * self[0][1])
+
 
 class CylinderShape(BaseShape):
     """ BulletCylinderShape."""
     bshape = p3b.BulletCylinderShape
     args0 = OrderedDict((("Radius", 0.5), ("Height", 1.)))
+
+    def scale(self, scale):
+        if scale[0] != scale[1]:
+            raise ValueError("%s does not support anisotropic x,y scaling" %
+                             self.bshape)
+        self[0] = (scale[0] * self[0][0], scale[2] * self[0][1])
 
 
 class PlaneShape(BaseShape):
@@ -151,11 +170,22 @@ class PlaneShape(BaseShape):
     bshape = p3b.BulletPlaneShape
     args0 = OrderedDict((("PlaneNormal", Vec3(0, 0, 1)), ("PlaneConstant", 0)))
 
+    def scale(self, scale):
+        s = self[0][0].dot(Vec3(*scale)) / self[0][0].length()
+        args = (self[0][0], self[0][1] * s)
+        self[0] = args
+
 
 class SphereShape(BaseShape):
     """ BulletSphereShape."""
     bshape = p3b.BulletSphereShape
     args0 = OrderedDict((("Radius", 0.5),))
+
+    def scale(self, scale):
+        if (scale[0] != scale[1]) or (scale[0] != scale[2]):
+            raise ValueError("%s does not support anisotropic x,y,z scaling" %
+                             self.bshape)
+        self[0] = (scale[0] * self[0][0],)
 
 
 class ShapeManager(object):

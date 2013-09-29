@@ -1,7 +1,8 @@
 """ nosetests for scenesim.objects.sso/gso/pso."""
 from contextlib import contextmanager
 from ctypes import c_float
-from itertools import izip
+from itertools import imap, izip
+from operator import mul
 import random
 ##
 from libpanda import Mat4, Point3, Quat, TransformState, Vec3, Vec4
@@ -11,7 +12,9 @@ from pandac.PandaModules import GeomNode, ModelRoot, NodePath, PandaNode
 from path import path
 ##
 from scenesim.objects.gso import GSO
-from scenesim.objects.pso import CPSO, GHSO, PSO, RBSO, cast_c_float
+from scenesim.objects.pso import (BaseShape, BoxShape, CapsuleShape, ConeShape,
+                                  CylinderShape, PlaneShape, SphereShape,
+                                  CPSO, GHSO, PSO, RBSO, cast_c_float)
 from scenesim.objects.sso import Cache, SSO
 
 
@@ -509,55 +512,91 @@ def test_cpso_destroy_component_shapes():
     cpso.destroy_component_shapes()
     for obj in cpso.components:
         assert obj.node().getNumShapes() == 0
+
+
+def test_boxshape():
+    # __init__
+    S0 = BoxShape()
+    args = Vec3(1, 2, 3)
+    S1 = BoxShape([args])
+    assert S0[0][0] == BoxShape.args0.values()[0]
+    assert S1[0][0] == args
+
+
+def test_boxshape_fix_args():
+    pass
+
+
+def test_boxshape_fix_xform():
+    # _fix_xform
+    ident_T = TransformState.makeIdentity()
+    X = None
+    assert BoxShape._fix_xform(X) == ident_T
+    X = () 
+    assert BoxShape._fix_xform(X) == ident_T
+    X = Mat4.identMat() * 3
+    assert BoxShape._fix_xform(X) == TransformState.makeMat(X)
+
+
+def test_boxshape_fix_prms():
+    pass
+
+
+def test_boxshape_init():
+    pass
+
+
+def test_baseshape_read_name():
+    assert "Box" == BaseShape.read_name(BulletBoxShape)
     
 
-# c = 4.
-# n = 3
-# m0 = 10.
-# sso = SSO("parent")
-# cpso = CPSO("cpso")
-# cpso.set_pos((5, 6, 7))
-# parent = cpso.getParent()
-# objs = [RBSO(str(i)) for i in xrange(n)]
-# for i, obj in enumerate(objs):
-#     m = m0 * (i + 1)
-#     obj.set_mass(m)  # * (i + 1))
-#     x = c * (i - (n - 1) / 2.)
-#     # print x, m
-#     obj.setPos((x, 0, 0))
-#     obj.set_shape("Box")
-#     obj.init_resources(tags=("shape",))
-# print cpso.get_pos(parent), cpso.get_mass(), [obj.get_pos(parent) for obj in objs]
-# print
-# cpso.add(objs)
-# cpso.init_tree()
-# for i in xrange(cpso.node().getNumShapes()):
-#     print i
-#     print cpso.node().getShape(i)
-#     print cpso.node().getShapeMat(i)
-# print
-# print cpso.get_pos(parent), cpso.get_mass(), [obj.get_pos(parent) for obj in objs]
-# cpso.remove(objs[:1])
-# cpso.init_tree()
-# print cpso.get_pos(parent), cpso.get_mass(), [obj.get_pos(parent) for obj in objs]
-# for i in xrange(cpso.node().getNumShapes()):
-#     print i
-#     print cpso.node().getShape(i)
-#     print cpso.node().getShapeMat(i)
-# print
-
-
-        
-def test_bshapemanager():
+def test_boxshape_read_params():
     pass
 
 
-def test_bshapemanager_read_node():
-    pass
+def test_boxshape_scale():
+    S0 = BoxShape()
+    args = Vec3(1, 2, 3)
+    S1 = BoxShape([args])
+    scale = Vec3(5, 6, 7)
+    S0.scale(scale)
+    S1.scale(scale)
+    assert S0[0][0] == Vec3(*imap(mul, BoxShape.args0.values()[0], scale))
+    assert S1[0][0] == Vec3(*imap(mul, args, scale))
 
 
-def test_bshapemanager_init():
-    pass
+def test_boxshape_shift():
+    S0 = BoxShape()
+    args = Vec3(1, 2, 3)
+    S1 = BoxShape([args])
+    pos = Vec3(10, 20, 30)
+    quat = Quat(1, 1, 0, 0)
+    quat.normalize()
+    ones = Vec3(1, 1, 1)
+    T = TransformState.makePosQuatScale(pos, quat, ones)
+    S0.shift(pos=pos, quat=quat)
+    S1.shift(pos=pos, quat=quat)
+    S1.shift(pos=pos, quat=quat)
+    assert S0[1] == T
+    assert S1[1] == T.compose(T)
+
+
+def test_boxshape_transform():
+    args = Vec3(1, 2, 3)
+    S0 = BoxShape([args])
+    scale = Vec3(5, 6, 7)
+    pos = Vec3(10, 20, 30)
+    quat = Quat(1, 1, 0, 0)
+    quat.normalize()
+    ones = Vec3(1, 1, 1)
+    rbso = RBSO("rbso")
+    rbso.set_scale(scale)
+    rbso.set_pos(pos)
+    rbso.set_quat(quat)
+    S0.transform(rbso)
+    T = TransformState.makePosQuatScale(pos, quat, ones)
+    assert S0[0][0] == Vec3(*imap(mul, args, scale))
+    assert S0[1] == T
 
 
 ## GSO
