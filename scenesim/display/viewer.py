@@ -82,6 +82,7 @@ class Viewer(ShowBase, object):
         self.scene = SSO("scene")
         self.scene.reparentTo(self.render)
         # Key callbacks.
+        self.accept("shift-control-escape", self.exit)
         self.accept("escape", self.exit)
         self.accept("0", self.reset_sso)
         self.accept("arrow_left", self.prev)
@@ -91,8 +92,12 @@ class Viewer(ShowBase, object):
         self.accept("f1", self.toggle_debug)
         self.accept("o", self.physics_once, extraArgs=[1. / 10])
         self.accept("i", self.physics_once, extraArgs=[1. / 10000])
+        # Remove existing keyboard tasks.
+        self.mandatory_events = ("window-event", "async_loader_0",
+                                 "render-texture-targets-changed",
+                                 "shift-control-escape")
         # Task list: name: (key, args)
-        tasks = {"physics": ("p",),
+        events = {"physics": ("p",),
                  "repel": ("t",),
                  "bump": ("f",),
                  "rotate": ("r", 20),
@@ -100,8 +105,8 @@ class Viewer(ShowBase, object):
                  "ss_task": ("s",),
                  "ssa_task": ("w",),
                  "bp": ("b",)}
-        # Add tasks
-        for key, val in tasks.iteritems():
+        # Add events
+        for key, val in events.iteritems():
             call = [key] + list(val[1:])
             self.accept(val[0], self.toggle_task, call)
         # These are the key events that we will never ignore
