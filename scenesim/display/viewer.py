@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 """ Viewer for SSOs."""
-from pdb import set_trace as BP
+##
+from math import radians, tan
 import sys
-
+##
 from direct.showbase.ShowBase import ShowBase
 from libpanda import AntialiasAttrib, BitMask32, PerspectiveLens, Point3, Vec3
 from numpy import array
@@ -10,23 +11,23 @@ from panda3d.bullet import BulletRigidBodyNode
 from panda3d.core import ConfigVariableBool, WindowProperties
 from pandac.PandaModules import AmbientLight, NodePath, Spotlight
 from path import path
-
+##
 from scenesim.display.geometry import (extrude, get_projection_mat,
                                        plane_intersection, project)
 from scenesim.display.lightbase import Loader
 from scenesim.objects.gso import GSO
-from scenesim.objects.pso import GHSO, PSO, RBSO
+from scenesim.objects.pso import PSO
 from scenesim.objects.sso import SSO
 from scenesim.physics.bulletbase import BulletBase
+##
+from pdb import set_trace as BP
 
 
 class Viewer(ShowBase, object):
     """ Viewer for SSOs."""
 
     def __init__(self):
-        # ShowBase init.
         ShowBase.__init__(self)
-
         resize_window = ConfigVariableBool('viewer-resize-window', '#t')
         if resize_window.getValue():
             self.win_size = (800, 800)
@@ -98,13 +99,13 @@ class Viewer(ShowBase, object):
                                  "shift-control-escape")
         # Task list: name: (key, args)
         events = {"physics": ("p",),
-                 "repel": ("t",),
-                 "bump": ("f",),
-                 "rotate": ("r", 20),
-                 "rotate90": ("h",),
-                 "ss_task": ("s",),
-                 "ssa_task": ("w",),
-                 "bp": ("b",)}
+                  "repel": ("t",),
+                  "bump": ("f",),
+                  "rotate": ("r", 20),
+                  "rotate90": ("h",),
+                  "ss_task": ("s",),
+                  "ssa_task": ("w",),
+                  "bp": ("b",)}
         # Add events
         for key, val in events.iteritems():
             call = [key] + list(val[1:])
@@ -143,7 +144,7 @@ class Viewer(ShowBase, object):
             props.setSize(w, h)
             props.setFullscreen(True)
         self.win.requestProperties(props)
-       
+
     def _get_screen_size(self):
         winx = self.win.getXSize()
         winy = self.win.getYSize()
@@ -202,7 +203,7 @@ class Viewer(ShowBase, object):
             my = self.mouseWatcherNode.getMouseY()
             self.cursor.setPos(mx * ar, 0, my)
         return task.cont
-            
+
     # def draw_cursor2d(self, task):
     #     """ Draw cursor indicator."""
     #     if getattr(self, "cursor", None) and self.mouseWatcherNode.hasMouse():
@@ -216,7 +217,7 @@ class Viewer(ShowBase, object):
     #         y = p2d[1]
     #         self.cursor.setPos(x, 0., y)
     #     return task.cont
-         
+
     def init_physics(self, bbase):
         """ Initialize the physics resources."""
         self.bbase = bbase
@@ -246,10 +247,42 @@ class Viewer(ShowBase, object):
         self.background = bg
         self.background.reparentTo(self.scene)
 
+    def optimize_camera(self):
+        """ Calculate good camera parameters given the current stim."""
+        top = self.cameras.getTop()
+        p0 = Point3()
+        p1 = Point3()
+        self.sso.calcTightBounds(p0, p1)
+        shape = p1 - p0
+        extent = (shape[0], shape[2])
+        extent = [max(extent)] * 2
+        center = shape / 2. + p0
+        # Adjust camera's x-position.
+        self.cameras.setX(top, center[0])
+        self.cameras.setZ(top, p1[2])
+        # Compute where camera will point.
+        # look_at = Point3(center[0], self.look_at.getY(), self.look_at.getZ())
+        # look_at = (center[0], center[1], self.look_at.getZ())
+        look_at = center
+        origin = Point3(center[0], center[1], p1[2])
+        displacement = self.cameras.getPos(top) - origin
+        distance = displacement.length()
+        fov = self.cam.node().getLens().getFov()
+        target_ratio = 0.65
+        dx = extent[0] / 2. / target_ratio / tan(radians(fov[0]) / 2.)
+        dz = extent[1] / 2. / target_ratio / tan(radians(fov[1]) / 2.)
+        dr = max(dx, dz) / distance
+        pos = origin + displacement * dr
+        self.cameras.setPos(top, pos)
+        #BP()
+        # Point camera toward stim.
+        self.look_at.setPos(top, look_at)
+        self.cameras.lookAt(self.look_at)
+
     def _load(self, model):
         """ Wrapper for egg/bam loading."""
         node = NodePath(GSO.loader.loadSync(model))
-        return node       
+        return node
 
     def toggle_task(self, taskname, sort=0):
         """ Toggles taskMgr task 'taskname'."""
@@ -272,7 +305,7 @@ class Viewer(ShowBase, object):
         # Update amount of time simulated so far.
         self.old_elapsed += dt
         # Step the physics dt time.
-        size_sub = 1. / 400.
+        size_sub = self.bbase.sim_par["size_sub"]
         n_subs = int(dt / size_sub)
         self.bbase.step(dt, n_subs, size_sub)
         return task.cont
@@ -378,6 +411,7 @@ class Viewer(ShowBase, object):
         self.sso.reparentTo(self.scene)
         self.cache = self.scene.store_tree()
         self.attach_physics()
+        self.optimize_camera()
 
     def attach_physics(self):
         # Attach `self.scene` to the physics world.
