@@ -75,6 +75,7 @@ class Viewer(ShowBase, object):
         lens = PerspectiveLens()
         self.camLens = lens
         self.camLens.setNearFar(0.01, 1000.0)
+        self.cam.node().setLens(self.camLens)
         #
         # Initialize / set variables
         self.sso = None
