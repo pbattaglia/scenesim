@@ -1,7 +1,8 @@
 """ Class definition for LightBase. """
+import atexit
 import os
 import sys
-
+##
 from libpanda import BitMask32
 from numpy import fromstring
 from panda3d.core import Loader as PandaLoader
@@ -43,6 +44,7 @@ class LightBase(object):
         self.output_list = []
         self.gsg_list = []
         self.cameras = None
+        atexit.register(self._exitfunc)
 
     def init_graphics(self):
         """ Creates GraphicsEngine, GraphicsPipe, and loader """
@@ -457,7 +459,7 @@ class LightBase(object):
         else:
             img = PNMImage()
             tex.store(img)
-        return img    
+        return img
 
     @staticmethod
     def screenshot(output, pth=None):
@@ -480,22 +482,19 @@ class LightBase(object):
     def destroy(self):
         """ self.__exitfunc() calls this automatically """
         self.close_all_outputs()
-        # if getattr(self, "loader", None):
-        #     self.loader.destroy()
-        #     self.loader = None
         if getattr(self, "engine", None):
             self.engine.removeAllWindows()
             self.engine = None
         if getattr(self, "pipe", None):
             self.pipe = None
 
-    def __exitfunc(self):
-        """ Customize pre-exit commands."""
+    def _exitfunc(self):
+        """ Atexit function."""
         self.destroy()
 
     def user_exit(self):
         """ The user has requested we exit the program. """
-        self.__exitfunc()
+        self._exitfunc()
         sys.exit()
 
     @staticmethod
