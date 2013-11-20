@@ -1,20 +1,20 @@
 """ BulletBase interfaces with Panda3d's Bullet module."""
-# Standard
 from collections import Iterable
 from contextlib import contextmanager
 from functools import update_wrapper
 from itertools import combinations, izip
 from math import isnan, sqrt
-# External
+from warnings import warn
+##
 from libpanda import BitMask32, Point3, Quat, Vec3
 import numpy as np
-from panda3d.bullet import (BulletConstraint, BulletDebugNode,
+from panda3d.bullet import (BulletBaseCharacterControllerNode, BulletBodyNode,
+                            BulletConstraint, BulletDebugNode,
                             BulletGenericConstraint, BulletGhostNode,
-                            BulletWorld)
+                            BulletVehicle, BulletWorld)
 from panda3d.core import PythonCallbackObject, TransformState
 from pandac.PandaModules import NodePath
-# Project
-#
+##
 from pdb import set_trace as BP
 
 
@@ -22,6 +22,10 @@ nan = float("nan")
 
 
 class BulletBaseError(Exception):
+    pass
+
+
+class DeactivationEnabledWarning(UserWarning):
     pass
 
 
@@ -217,6 +221,8 @@ class BulletBase(object):
     ghost_bit = BitMask32.bit(1)
     static_bit = BitMask32.bit(2)
     dynamic_bit = ghost_bit | static_bit
+    bw_types = (BulletBaseCharacterControllerNode, BulletBodyNode,
+                BulletConstraint, BulletVehicle)
 
     def __init__(self):
         self.world = None
@@ -294,7 +300,7 @@ class BulletBase(object):
         for body in self.bodies:
             self._constrain_axis(body)
 
-    def attach(self, objs):
+    def attach(self, objs, suppress_deact_warn=False):
         """ Attach Bullet objects to the world."""
         if not self.world:
             raise BulletBaseError("No BulletWorld initialized.")
@@ -303,10 +309,21 @@ class BulletBase(object):
             objs = [objs]
         elif isinstance(objs, dict):
             objs = objs.itervalues()
-        # Attach them.
+        bw_objs = []
         for obj in objs:
             if isinstance(obj, NodePath):
                 obj = obj.node()
+            if isinstance(obj, self.bw_types):
+                bw_objs.append(obj)
+        # Don't attach ones that are already attached.
+        bw_objs = set(bw_objs) - set(self.bodies)
+        # Attach them.
+        for obj in bw_objs:
+            # Warn about deactivation being enabled.
+            if (not suppress_deact_warn and
+                getattr(obj, "isDeactivationEnabled", lambda: True)()):
+                msg = "Deactivation is enabled on object: %s" % obj
+                warn(msg, DeactivationEnabledWarning)
             # Apply existing axis constraints to the objects.
             self._constrain_axis(obj)
             # Attach the objects to the world.
@@ -333,10 +350,14 @@ class BulletBase(object):
             objs = [objs]
         elif isinstance(objs, dict):
             objs = objs.itervalues()
-        # Remove them.
+        bw_objs = []
         for obj in objs:
             if isinstance(obj, NodePath):
                 obj = obj.node()
+            if isinstance(obj, self.bw_types):
+                bw_objs.append(obj)
+        # Remove them.
+        for obj in bw_objs:
             # Remove the objects from the world.
             try:
                 self.world.remove(obj)
@@ -380,22 +401,19 @@ class BulletBase(object):
             bodies, vecpos, dur = force
             dt0 = np.clip(dur, 0., dt)
             n_subs0 = int(np.ceil(n_subs * dt0 / dt))
-            size_sub0 = size_sub * dt0 / dt
             dt1 = dt - dt0
-            n_subs1 = n_subs - n_subs0
-            size_sub1 = size_sub - size_sub0
+            n_subs1 = n_subs - n_subs0 + 1
             for body in bodies:
                 body.applyForce(Vec3(*vecpos[0]), Point3(*vecpos[1]))
             # With force.
-            self.world.doPhysics(dt0, n_subs0, size_sub0)
+            self.world.doPhysics(dt0, n_subs0, size_sub)
             for body in bodies:
                 body.clearForces()
         else:
             dt1 = dt
             n_subs1 = n_subs
-            size_sub1 = size_sub
         # With no force.
-        self.world.doPhysics(dt1, n_subs1, size_sub1)
+        self.world.doPhysics(dt1, n_subs1, size_sub)
 
     @staticmethod
     def attenuate_velocities(bodies, linvelfac=0., angvelfac=0.):

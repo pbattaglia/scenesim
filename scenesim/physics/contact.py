@@ -1,18 +1,16 @@
 """ Identifies contiguous subsets of objects using Bullet's collision
 detection."""
-# Standard
 from collections import OrderedDict
 from contextlib import contextmanager
 from itertools import chain, combinations
-# External
+
 from libpanda import Vec3
 import networkx as nx
 import numpy as np
 from Polygon.Utils import convexHull
 from scenesim.objects.pso import PSO
 from scenesim.physics.bulletbase import BulletBase
-# Project
-#
+
 from pdb import set_trace as BP
 
 
@@ -210,13 +208,12 @@ class Detector(object):
 
 class ContactDetector(Detector):
 
-    def __init__(self, world, scene, margin=None, type_=PSO, names=None):
+    def __init__(self, world, scene, margin=(0.01, 0.01, 0.01), type_=PSO,
+                 names=None):
         self.scene = scene
         self.top = self.scene.getTop()
         # Store initial state.
         self.cache = self.scene.store_tree()
-        if margin is None:
-            margin = (0.01, 0.01, 0.01)
         self.margin = Vec3(*margin)
         bodies = self.scene.descendants(type_=type_, names=names)
         super(ContactDetector, self).__init__(world, bodies)
@@ -250,12 +247,13 @@ class Parser(object):
 
     def clear(self):
         self._surfaces = None
+        self._v_relation = None
         self._support = None
-        self._relations = None
         self._bottom_idx = None
         self._bottom_ibody = None
         self._bottom_bodies = None
         self._graph = None
+        self._connected = None
         self._subgroups = None
 
     @property
@@ -269,33 +267,59 @@ class Parser(object):
         return self._surfaces
 
     @property
-    def support(self):
+    def v_relation(self):
+        """ Returns a matrix that identifies the vertical relationships.
+        self.v_relation[i, j] = 1 => `i` is below `j`.
+        self.v_relation[i, j] = 2 => `j` is above `i`.
+        self.v_relation[i, j] = 3 => `i` and `j` are neither below nor below.
         """
+        if self._v_relation is None:
+            eps = 0.01
+            t1 = self.surfaces[:, None, 1] <= self.surfaces[None, :, 0] + eps
+            t2 = self.surfaces[None, :, 1] <= self.surfaces[:, None, 0] + eps
+            t3 = ~(t1 | t2)
+            self._v_relation = np.zeros([self.n_bodies] * 2, dtype="uint8")
+            self._v_relation[t1] = 1
+            self._v_relation[t2] = 2
+            self._v_relation[t3] = 3
+        return self._v_relation
+
+    # @property
+    # def v_relation(self):
+    #     """ Returns a matrix that identifies the vertical relationships.
+    #     self.v_relation[i, j] = 1 => `i` is below `j`.
+    #     self.v_relation[i, j] = 2 => `j` is above `i`.
+    #     self.v_relation[i, j] = 3 => `i` and `j` are neither below nor below.
+    #     """
+    #     if self._v_relation is None:
+    #         eps = 0.01
+    #         t1 = np.abs(self.surfaces[:, None, 1] -
+    #                     self.surfaces[None, :, 0]) < eps
+    #         t2 = np.abs(self.surfaces[:, None, 0] -
+    #                     self.surfaces[None, :, 1]) < eps
+    #         t3 = ~(t1 | t2)
+    #         self._v_relation = np.zeros([self.n_bodies] * 2,
+    #                                            dtype="uint8")
+    #         self._v_relation[t1] = 1
+    #         self._v_relation[t2] = 2
+    #         self._v_relation[t3] = 3
+    #     return self._v_relation
+    
+    @property
+    def support(self):
+        """ Returns a matrix that identifies the contact types.
+        self.support[i, j] = 0 => `i` is not in contact with `j`.
         self.support[i, j] = 1 => `i` is supporting `j`.
         self.support[i, j] = 2 => `j` is supporting `i`.
-        self.support[i, j] = 3 => `i` and `j` are not supporting each other.
-        """
+        self.support[i, j] = 3 => `i` and `j` are in contact, but not
+                                  supporting each other.
+        """        
         if self._support is None:
-            eps = 0.01
-            t1 = np.abs(self.surfaces[:, None, 1] -
-                        self.surfaces[None, :, 0]) < eps
-            t2 = np.abs(self.surfaces[:, None, 0] -
-                        self.surfaces[None, :, 1]) < eps
-            t3 = ~(t1 | t2)
             self._support = np.zeros([self.n_bodies] * 2, dtype="uint8")
-            self._support[t1] = 1
-            self._support[t2] = 2
-            self._support[t3] = 3
-        return self._support
-
-    @property
-    def relations(self):
-        """ Returns a matrix that identifies the contact types."""
-        if self._relations is None:
-            self._relations = np.zeros([self.n_bodies] * 2, dtype="uint8")
             for i, j in self.contacts:
-                self._relations[i, j] = self.support[i, j]
-        return self._relations
+                self._support[i, j] = self.v_relation[i, j]
+                self._support[j, i] = self.v_relation[j, i]
+        return self._support
 
     @property
     def bottom_idx(self):
@@ -305,7 +329,7 @@ class Parser(object):
             self._bottom_idx = OrderedDict()
             for (i, j), contact in self.contacts.iteritems():
                 bodies = (self.bodies[i], self.bodies[j])
-                s = self.support[i, j]
+                s = self.v_relation[i, j]
                 if s in (0, 3):
                     idx = bodies[0].getPos()[2] - bodies[1].getPos()[2] > 0.
                 else:
@@ -336,11 +360,19 @@ class Parser(object):
     @property
     def graph(self):
         """ Returns `networkx.Graph` object that represents the
-        relations matrix."""
+        support matrix."""
         if self._graph is None:
-            self._graph = nx.from_numpy_matrix(self.relations)
+            self._graph = nx.from_numpy_matrix(self.support)
         return self._graph
 
+    @property
+    def connected(self):
+        """ Returns whether scene is fully connected by proximal
+        contacts."""
+        if self._connected is None:
+            self._connected = nx.is_connected(self.graph)
+        return self._connected
+    
     @property
     def subgroups(self):
         """ List of all subgroups (subgraphs) of the graph."""

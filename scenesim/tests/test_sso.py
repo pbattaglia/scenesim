@@ -1,17 +1,20 @@
 """ nosetests for scenesim.objects.sso/gso/pso."""
-# Standard
 from contextlib import contextmanager
 from ctypes import c_float
-from itertools import izip
+from itertools import imap, izip
+from operator import mul
 import random
-# External
+##
 from libpanda import Mat4, Point3, Quat, TransformState, Vec3, Vec4
+import numpy as np
 from panda3d.bullet import BulletBoxShape, BulletRigidBodyNode, BulletShape
 from pandac.PandaModules import GeomNode, ModelRoot, NodePath, PandaNode
 from path import path
-# Project
+##
 from scenesim.objects.gso import GSO
-from scenesim.objects.pso import GHSO, PSO, RBSO, cast_c_float
+from scenesim.objects.pso import (BaseShape, BoxShape, CapsuleShape, ConeShape,
+                                  CylinderShape, PlaneShape, SphereShape,
+                                  CPSO, GHSO, PSO, RBSO, cast_c_float)
 from scenesim.objects.sso import Cache, SSO
 
 
@@ -451,16 +454,149 @@ def test_pso_delete_shape():
     assert obj.node().getNumShapes() == 0
 
 
-def test_bshapemanager():
+def test_cpso_add():
+    c = 3.
+    n = 3
+    cpso = CPSO("foo")
+    objs = [RBSO(str(i)) for i in xrange(n)]
+    for obj in objs:
+        obj.setPos((c * i - c, 0, 0))
+        obj.set_shape("Box")
+    cpso.add(objs)
+    assert len(cpso.getChildren()) == n
+
+
+def test_cpso_remove():
+    c = 3.
+    n = 4
+    cpso = CPSO("foo")
+    objs = [RBSO(str(i)) for i in xrange(n)]
+    for obj in objs:
+        obj.setPos((c * (i - np.floor(n / 2.)), 0, 0))
+        obj.set_shape("Box")
+    cpso.add(objs)
+    assert len(cpso.getChildren()) == n
+    cpso.remove(objs[:-2])
+    assert len(cpso.getChildren()) == 2
+
+
+def test_cpso_init_tree():
+    c = 3.
+    n = 4
+    sso = SSO("parent")
+    cpso = CPSO("foo")
+    cpso.reparentTo(sso)
+    objs = [RBSO(str(i)) for i in xrange(n)]
+    for obj in objs:
+        obj.setPos((c * (i - np.floor(n / 2.)), 0, 0))
+        obj.set_shape("Box")
+    cpso.add(objs)
+    sso.init_tree(tags=("shape",))
+    assert cpso.node().getNumShapes() == n
+    for obj in cpso.components:
+        assert obj.node().getNumShapes() == 0
+
+
+def test_cpso_destroy_component_shapes():
+    c = 3.
+    n = 4
+    cpso = CPSO("foo")
+    objs = [RBSO(str(i)) for i in xrange(n)]
+    for obj in objs:
+        obj.setPos((c * (i - np.floor(n / 2.)), 0, 0))
+        obj.set_shape("Box")
+        obj.init_resources(tags=("shape",))
+    cpso.add(objs)
+    for obj in cpso.components:
+        assert obj.node().getNumShapes() == 1
+    cpso.destroy_component_shapes()
+    for obj in cpso.components:
+        assert obj.node().getNumShapes() == 0
+
+
+def test_boxshape():
+    # __init__
+    S0 = BoxShape()
+    args = Vec3(1, 2, 3)
+    S1 = BoxShape([args])
+    assert S0[0][0] == BoxShape.args0.values()[0]
+    assert S1[0][0] == args
+
+
+def test_boxshape_fix_args():
     pass
 
 
-def test_bshapemanager_read_node():
+def test_boxshape_fix_xform():
+    # _fix_xform
+    ident_T = TransformState.makeIdentity()
+    X = None
+    assert BoxShape._fix_xform(X) == ident_T
+    X = () 
+    assert BoxShape._fix_xform(X) == ident_T
+    X = Mat4.identMat() * 3
+    assert BoxShape._fix_xform(X) == TransformState.makeMat(X)
+
+
+def test_boxshape_fix_prms():
     pass
 
 
-def test_bshapemanager_init():
+def test_boxshape_init():
     pass
+
+
+def test_baseshape_read_name():
+    assert "Box" == BaseShape.read_name(BulletBoxShape)
+    
+
+def test_boxshape_read_params():
+    pass
+
+
+def test_boxshape_scale():
+    S0 = BoxShape()
+    args = Vec3(1, 2, 3)
+    S1 = BoxShape([args])
+    scale = Vec3(5, 6, 7)
+    S0.scale(scale)
+    S1.scale(scale)
+    assert S0[0][0] == Vec3(*imap(mul, BoxShape.args0.values()[0], scale))
+    assert S1[0][0] == Vec3(*imap(mul, args, scale))
+
+
+def test_boxshape_shift():
+    S0 = BoxShape()
+    args = Vec3(1, 2, 3)
+    S1 = BoxShape([args])
+    pos = Vec3(10, 20, 30)
+    quat = Quat(1, 1, 0, 0)
+    quat.normalize()
+    ones = Vec3(1, 1, 1)
+    T = TransformState.makePosQuatScale(pos, quat, ones)
+    S0.shift(pos=pos, quat=quat)
+    S1.shift(pos=pos, quat=quat)
+    S1.shift(pos=pos, quat=quat)
+    assert S0[1] == T
+    assert S1[1] == T.compose(T)
+
+
+def test_boxshape_transform():
+    args = Vec3(1, 2, 3)
+    S0 = BoxShape([args])
+    scale = Vec3(5, 6, 7)
+    pos = Vec3(10, 20, 30)
+    quat = Quat(1, 1, 0, 0)
+    quat.normalize()
+    ones = Vec3(1, 1, 1)
+    rbso = RBSO("rbso")
+    rbso.set_scale(scale)
+    rbso.set_pos(pos)
+    rbso.set_quat(quat)
+    S0.transform(rbso)
+    T = TransformState.makePosQuatScale(pos, quat, ones)
+    assert S0[0][0] == Vec3(*imap(mul, args, scale))
+    assert S0[1] == T
 
 
 ## GSO

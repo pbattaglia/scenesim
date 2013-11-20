@@ -1,8 +1,8 @@
 """ Class definition for LightBase. """
-# Standard
+import atexit
 import os
 import sys
-# External
+##
 from libpanda import BitMask32
 from numpy import fromstring
 from panda3d.core import Loader as PandaLoader
@@ -10,7 +10,7 @@ from panda3d.core import TexturePool
 from pandac.PandaModules import (
     AmbientLight, Camera, Filename, FrameBufferProperties, GraphicsEngine,
     GraphicsOutput, GraphicsPipe, GraphicsPipeSelection, ModelNode, NodePath,
-    PerspectiveLens, PointLight, RescaleNormalAttrib, Texture,
+    PNMImage, PerspectiveLens, PointLight, RescaleNormalAttrib, Texture,
     WindowProperties)
 from path import path
 
@@ -35,15 +35,16 @@ class LightBase(object):
     """ LightBase is a lightweight interface for rendering with
     Panda3d. It contains several key Panda3d objects that are required
     for rendering, like GraphicsEngine, GraphicsPipe, GraphicsOutput,
-    a root NodePath (rootnode), cameras and lights. It provides also
+    a root NodePath (root), cameras and lights. It provides also
     methods for manipulating and reading them out them."""
 
     def __init__(self):
         self.init_graphics()
-        self.setup_rootnode()
+        self.setup_root()
         self.output_list = []
         self.gsg_list = []
         self.cameras = None
+        atexit.register(self._exitfunc)
 
     def init_graphics(self):
         """ Creates GraphicsEngine, GraphicsPipe, and loader """
@@ -127,13 +128,11 @@ class LightBase(object):
         # Create the buffer
         output = self.make_output("offscreen", name, sort, wp=wp,
                                   xflags=xflags, host_out=host_out)
-
         # Handle case when offscreen buffer cannot be directly created
         # (currently this is what happens)
         if output is None:
             print("Direct offscreen buffer creation failed...")
             print("... falling back to onscreen --> offscreen method.")
-
             # Open an onscreen window first, just to get a GraphicsOutput
             # object which is needed to open an offscreen buffer.
             dummywin = self.make_window(size, "dummy_onscreen_win", sort,
@@ -141,31 +140,26 @@ class LightBase(object):
             # Now, make offscreen buffer through win
             output = self.make_output("offscreen", name, sort, xflags=xflags,
                                       host_out=dummywin)
-
             # Handle failure to create window (returns None)
             if output is None:
                 raise StandardError("Failed to create offscreen buffer.")
-
         return output
 
     def make_texture_buffer(self, size=None, name=None, sort=10,
                             xflags=0, mode=None, bitplane=None, host_out=None):
         """ Makes an offscreen buffer and adds a render texture """
-
         # Make the offscreen buffer
         output = self.make_buffer(size, name, sort, xflags, host_out)
         # Add the texture
         tex = self.add_render_texture(output, mode, bitplane)
         # Cause necessary stuff to be created (buffers, textures etc)
         self.render_frame()
-
         return output, tex
 
     def make_output(self, window_type, name=None, sort=10, fbp=None, wp=None,
                     xflags=0, host_out=None):
         """ Makes a GraphicsOutput object and stores it in
         self.output_list. This is the low-level interface."""
-
         # Input handling / defaults
         if name is None:
             name = window_type + "_win"
@@ -184,7 +178,6 @@ class LightBase(object):
             flags = flags | GraphicsPipe.BFRequireWindow
         elif window_type == "offscreen":
             flags = flags | GraphicsPipe.BFRefuseWindow
-
         # Make the window / buffer
         engine = self.engine
         pipe = self.pipe
@@ -193,17 +186,13 @@ class LightBase(object):
         else:
             output = engine.makeOutput(pipe, name, sort, fbp, wp, flags,
                                        host_out.getGsg(), host_out)
-
         # Add output to this instance's list
         if output is not None:
             self.add_to_output_gsg_lists(output)
-
             # Set background color to black by default
             output.setClearColor((0.0, 0.0, 0.0, 0.0))
-
             # Cause necessary stuff to be created (buffers, textures etc)
             self.render_frame()
-
         return output
 
     def add_to_output_gsg_lists(self, output):
@@ -246,27 +235,27 @@ class LightBase(object):
         GraphicsOutput.RTPAuxFloat3
         GraphicsOutput.RTPDepth
         GraphicsOutput.RTPCOUNT
-
         """
-
         if mode is None:
             mode = GraphicsOutput.RTMBindOrCopy
         elif isinstance(mode, str):
             mode = getattr(GraphicsOutput, mode)
-
         if bitplane is None:
             bitplane = GraphicsOutput.RTPColor
         elif isinstance(bitplane, str):
             bitplane = getattr(GraphicsOutput, bitplane)
-
         tex = Texture()
-        tex.setFormat(Texture.FLuminance)
-
+        if bitplane is GraphicsOutput.RTPColor:
+            fmt = Texture.FLuminance
+        elif bitplane is GraphicsOutput.RTPDepth:
+            fmt = Texture.FDepthComponent
+        tex.setFormat(fmt)
         # Add the texture to the buffer
         output.addRenderTexture(tex, mode, bitplane)
         # Get a handle to the texture
-        assert tex == output.getTexture(), "Texture wasn't created properly."
-
+        assert (tex == output.getTexture(output.countTextures() - 1),
+                "Texture wasn't created properly.")
+        tex.clearRamImage()
         return tex
 
     def close_output(self, output):
@@ -322,7 +311,7 @@ class LightBase(object):
             # We make it a ModelNode with the PTLocal flag, so that a
             # wayward flatten operations won't attempt to mangle the
             # camera.
-            self.cameras = self.rootnode.attachNewNode(ModelNode("cameras"))
+            self.cameras = self.root.attachNewNode(ModelNode("cameras"))
             self.cameras.node().setPreserveTransform(ModelNode.PTLocal)
 
         # Make a new Camera node.
@@ -380,42 +369,39 @@ class LightBase(object):
     def make_lights():
         """ Create one point light and an ambient light."""
         lights = NodePath("lights")
-
         # Create point lights
         plight = PointLight("plight1")
         light = lights.attachNewNode(plight)
         light.setPos((3, -10, 2))
         light.lookAt(0, 0, 0)
-
         # Create ambient light
         alight = AmbientLight("alight")
         alight.setColor((0.75, 0.75, 0.75, 1.0))
         lights.attachNewNode(alight)
-
         return lights
 
-    def setup_rootnode(self):
+    def setup_root(self):
         """
-        Creates the rootnode scene graph, the primary scene graph for
+        Creates the root scene graph, the primary scene graph for
         rendering 3-d geometry.
         """
-        self.rootnode = NodePath("rootnode")
-        self.rootnode.setAttrib(RescaleNormalAttrib.makeDefault())
-        self.rootnode.setTwoSided(0)
+        self.root = NodePath("root")
+        self.root.setAttrib(RescaleNormalAttrib.makeDefault())
+        self.root.setTwoSided(0)
         self.backface_culling_enabled = 1
         self.texture_enabled = 1
         self.wireframe_enabled = 0
 
     def wireframe_on(self):
         """ Toggle wireframe mode on."""
-        self.rootnode.setRenderModeWireframe(100)
-        self.rootnode.setTwoSided(1)
+        self.root.setRenderModeWireframe(100)
+        self.root.setTwoSided(1)
         self.wireframe_enabled = 1
 
     def wireframe_off(self):
         """ Toggle wireframe mode off."""
-        self.rootnode.clearRenderMode()
-        self.rootnode.setTwoSided(not self.backface_culling_enabled)
+        self.root.clearRenderMode()
+        self.root.setTwoSided(not self.backface_culling_enabled)
         self.wireframe_enabled = 0
 
     @staticmethod
@@ -432,17 +418,47 @@ class LightBase(object):
 
     @staticmethod
     def get_tex_image(tex, freshape=True):
-        """ Returns numpy array containing image in tex """
+        """ Returns numpy array containing image in tex. """
         # Remember to call self.trigger_copy() before
         # self.render_frame(), or the next frame won't be pushed to RAM
+        if not tex.hasUncompressedRamImage():
+            img = None
+        else:
+            texel_type = tex.getComponentType()
+            if texel_type == Texture.TUnsignedByte:
+                dtype = "u1"
+            elif texel_type == Texture.TUnsignedShort:
+                dtype = "u2"
+            elif texel_type == Texture.TFloat:
+                dtype = "f4"
+            elif texel_type == Texture.TUnsignedInt248:
+                dtype = "u4"
+            # texel_width = tex.getComponentWidth()
+            texdata = tex.getUncompressedRamImage().getData()
+            img = fromstring(texdata, dtype=dtype)
+            if freshape:
+                shape = [tex.getYSize(), tex.getXSize(), -1]
+                n_channels = tex.getNumComponents()
+                if n_channels == 4:
+                    channel_order = [2, 1, 0, 3]
+                elif n_channels == 3:
+                    channel_order = [2, 1, 0]
+                else:
+                    # from pdb import set_trace as BP; BP()
+                    channel_order = range(n_channels)
+                img = img.reshape(shape)[:, :, channel_order]
+        return img
+
+    @staticmethod
+    def get_image(tex):
+        """ Returns PNMImage containing image in tex. """
+        # Remember to call self.trigger_copy() before
+        # self.render_frame(), or the next frame won't be pushed to RAM.
         if not tex.hasRamImage():
             img = None
         else:
-            texdata = tex.getRamImage().getData()
-            img = fromstring(texdata, "u1")
-            if freshape:
-                shape = [tex.getYSize(), tex.getXSize(), -1]
-                img = img.reshape(shape)[:, :, [2, 1, 0, 3]]
+            img = PNMImage()
+            tex.store(img)
         return img
 
     @staticmethod
@@ -466,22 +482,19 @@ class LightBase(object):
     def destroy(self):
         """ self.__exitfunc() calls this automatically """
         self.close_all_outputs()
-        # if getattr(self, "loader", None):
-        #     self.loader.destroy()
-        #     self.loader = None
         if getattr(self, "engine", None):
             self.engine.removeAllWindows()
             self.engine = None
         if getattr(self, "pipe", None):
             self.pipe = None
 
-    def __exitfunc(self):
-        """ Customize pre-exit commands."""
+    def _exitfunc(self):
+        """ Atexit function."""
         self.destroy()
 
     def user_exit(self):
         """ The user has requested we exit the program. """
-        self.__exitfunc()
+        self._exitfunc()
         sys.exit()
 
     @staticmethod

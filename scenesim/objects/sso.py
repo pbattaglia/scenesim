@@ -1,16 +1,13 @@
 """ Basic SceneSim objects."""
-# Standard
-from collections import Iterable
 import cPickle as pickle
+from collections import Iterable
 from functools import partial
 from itertools import izip
-# External
+##
 from pandac.PandaModules import NodePath, NodePathCollection, PandaNode
 from path import path
-# Project
+##
 from scenesim.lib import combomethod
-#
-from pdb import set_trace as BP
 
 
 class SSO(NodePath):
@@ -29,6 +26,15 @@ class SSO(NodePath):
         if isinstance(args[0], str):
             self.setPythonTag("sso", self.__class__)
         self.apply_prop(props, other=other)
+
+    def __eq__(self, other):
+        """ Returns boolean indicating whether the underlying nodes
+        are the same."""
+        try:
+            eq = self.getKey() == other.getKey()
+        except AttributeError:
+            eq = False
+        return eq
 
     @classmethod
     def cast(cls, node):
@@ -205,7 +211,8 @@ class SSO(NodePath):
     def descendants(self, depths=slice(None), type_=None, names=None):
         """ Returns a list of descendants of this node. All if 'depth' is
         None, down to 'depths' (if int), only at 'depth' levels (if
-        Iterable), or in a range (if slice)."""
+        Iterable), or in a range (if slice). `type_` and `names` are
+        used to filter out unwanted nodes."""
         # Filter out those that don't meet 'depth' criteria.
         # Different in/out test depending on 'depth'.
         if isinstance(depths, slice):
@@ -214,11 +221,13 @@ class SSO(NodePath):
             rng = xrange(depths + 1)
         else:
             rng = depths
-
         # Get all descendants. Filter type_ and names.
+        c = self.getNumNodes()
         dsc = [n for n in (self.from_tag(node)
                            for node in self.findAllMatches("**"))
-               if self._filter(n, type_, names) and n.getNumNodes() - 1 in rng]
+               if self._filter(n, type_, names) and n.getNumNodes() - c in rng]
+        # Sort by node name.
+        dsc.sort(key=NodePath.getName)
         return dsc
 
     def tree(self):
@@ -304,10 +313,11 @@ class SSO(NodePath):
 
     def init_tree(self, tags=None):
         """ Inits this node tree's resources."""
+        self.init_resources(tags=tags)
         # Get all descendants.
-        nodes = self.descendants(type_=SSO)
-        for node in nodes:
-            node.init_resources(tags=tags)
+        descendants = self.descendants(depths=[1], type_=SSO)
+        for node in descendants:
+            node.init_tree(tags=tags)
 
     def destroy_tree(self, tags=None):
         """ Destroys this node tree's resources."""
@@ -415,7 +425,7 @@ class Cache(object):
         self._nodes, self._porder = node.tree()
         # Build the cache. The keys are the node names and the values
         # are the nodes and props.
-        self._props = [SSO.from_tag(node).read_prop() for node in self._nodes]
+        self._props = [SSO.from_tag(n).read_prop() for n in self._nodes]
         return self
 
     def restore(self):
