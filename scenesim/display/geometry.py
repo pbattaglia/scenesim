@@ -11,10 +11,10 @@ def zbuffer_to_z(zb, near, far):
 
 def img_to_d(xi, yi, zb, near, far):
     """ Inputs image x, y coordinates and Z-buffer image, and returns
-    distance from the camera's position to eachpoint."""
+    distance from the camera's position to each point."""
     z = zbuffer_to_z(zb, near, far)
     phi = np.arctan2(np.sqrt(xi ** 2 + yi ** 2), near)
-    d = z * np.cos(phi)
+    d = z / np.cos(phi)
     return d
 
 
