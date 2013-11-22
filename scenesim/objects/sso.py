@@ -7,7 +7,7 @@ from itertools import izip
 from pandac.PandaModules import NodePath, NodePathCollection, PandaNode
 from path import path
 ##
-from scenesim.lib import combomethod
+from scenesim.util import combomethod
 
 
 class SSO(NodePath):
