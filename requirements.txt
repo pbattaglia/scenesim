@@ -1,5 +1,5 @@
-Polygon2
-networkx
-numpy
-panda3d
-path.py
+networkx>=1.6
+numpy>=1.8.0
+#panda3d
+path.py>=4.4
+Polygon2>=2.0.6
