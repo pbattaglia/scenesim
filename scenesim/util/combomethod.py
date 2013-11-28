@@ -1,4 +1,4 @@
-""" Combomethod class."""
+"""Combomethod class."""
 from functools import wraps
 
 

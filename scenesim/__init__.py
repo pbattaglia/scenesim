@@ -1,4 +1,10 @@
-""" scenesim library."""
+"""SceneSim
+===========
+
+Build 3D scene models, with geometric, physical, and appearance
+attributes. Render them as images. Simulate them under physics.
+
+"""
 from panda3d.core import loadPrcFile
 from path import path
 

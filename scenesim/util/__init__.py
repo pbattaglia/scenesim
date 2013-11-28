@@ -1,4 +1,7 @@
-""" scenesim.util.__init__."""
+"""
+scenesim.util
+=============
+"""
 from scenesim.util.combomethod import combomethod
 
 

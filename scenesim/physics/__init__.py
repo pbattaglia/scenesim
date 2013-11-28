@@ -1,4 +1,6 @@
-""" scenesim.physics.__init__ """
+"""scenesim.physics
+===================
+"""
 from scenesim.physics.bulletbase import BulletBase
 
 
