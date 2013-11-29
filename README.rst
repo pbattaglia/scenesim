@@ -1,6 +1,6 @@
 # SceneSim
 
-Create scenes and simulate their physics and graphics. 
+Create models of scenes whose objects have geometric, graphical, and physical attributes. Display them as images. Simulate them under physics.
 
 Requirements
 -----

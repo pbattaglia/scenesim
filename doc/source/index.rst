@@ -1,9 +1,9 @@
 SceneSim
 ========
 
-Build 3D models of scenes, whose :ref:`Objects <objects>` have geometric,
+Create models of scenes whose :ref:`objects <objects>` have geometric,
 graphical, and physical attributes. :ref:`Display <display>` them as
-images. Simulate them under :ref:`Physics <physics>`.
+images. Simulate them under :ref:`physics <physics>`.
 
 .. toctree::
    :maxdepth: 4
