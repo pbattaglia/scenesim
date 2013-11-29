@@ -1,4 +1,10 @@
-""" Basic SceneSim objects."""
+"""
+``scenesim.objects.sso``
+========================
+
+Basic SceneSim objects.
+
+"""
 import cPickle as pickle
 from collections import Iterable
 from functools import partial

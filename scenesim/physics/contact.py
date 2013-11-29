@@ -1,5 +1,10 @@
-""" Identifies contiguous subsets of objects using Bullet's collision
-detection."""
+"""
+``scenesim.physics.contact``
+============================
+
+Identifies contiguous subsets of objects using Bullet's collision detection.
+
+"""
 from collections import OrderedDict
 from contextlib import contextmanager
 from itertools import chain, combinations

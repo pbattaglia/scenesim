@@ -1,5 +1,11 @@
 #!/usr/bin/env python
-""" Class for visualizing simulations."""
+"""
+``scenesim.display.simviewer``
+==============================
+
+Class for visualizing simulations.
+
+"""
 from libpanda import AntialiasAttrib, BitMask32
 from pandac.PandaModules import (AmbientLight, NodePath, PerspectiveLens,
                                  Spotlight)

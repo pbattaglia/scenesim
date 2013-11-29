@@ -1,4 +1,10 @@
-"""Tools associated with graphics geometry."""
+"""
+``scenesim.display.geometry``
+=============================
+
+Functions for manipulating graphics geometry.
+
+"""
 import numpy as np
 
 

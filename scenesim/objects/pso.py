@@ -1,4 +1,10 @@
-""" Physics objects."""
+"""
+``scenesim.objects.pso``
+========================
+
+Physics SceneSim objects.
+
+"""
 from abc import ABCMeta, abstractmethod
 from collections import Iterable, OrderedDict
 from contextlib import contextmanager

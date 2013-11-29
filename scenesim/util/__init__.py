@@ -1,6 +1,5 @@
 """
-scenesim.util
-=============
+``scenesim.util``
 """
 from scenesim.util.combomethod import combomethod
 

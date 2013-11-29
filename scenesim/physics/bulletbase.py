@@ -1,4 +1,10 @@
-""" BulletBase interfaces with Panda3d's Bullet module."""
+"""
+``scenesim.physics.bulletbase``
+===============================
+
+BulletBase interface with Panda3d's Bullet module.
+
+"""
 from collections import Iterable
 from contextlib import contextmanager
 from functools import update_wrapper

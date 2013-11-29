@@ -1,5 +1,5 @@
-"""scenesim.physics
-===================
+"""
+scenesim.physics
 """
 from scenesim.physics.bulletbase import BulletBase
 

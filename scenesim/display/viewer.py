@@ -1,5 +1,11 @@
 #!/usr/bin/env python
-""" Viewer for SSOs."""
+"""
+``scenesim.display.viewer``
+===========================
+
+Viewer for SSOs.
+
+"""
 ##
 from math import radians, tan
 import sys

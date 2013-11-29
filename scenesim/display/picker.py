@@ -1,4 +1,10 @@
-""" Picker: view and click objects in a scene."""
+"""
+``scenesim.display.picker``
+==========================+
+
+Picker: view and click objects in a scene.
+
+"""
 ##
 from direct.directtools.DirectGeometry import LineNodePath
 from libpanda import BitMask32, Point3, Vec3, Vec4

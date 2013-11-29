@@ -1,4 +1,10 @@
-""" Graphics objects."""
+"""
+``scenesim.objects.gso``
+========================
+
+Graphics SceneSim objects.
+
+"""
 from functools import wraps
 from pdb import set_trace as BP
 
