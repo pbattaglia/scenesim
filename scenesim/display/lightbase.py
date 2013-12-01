@@ -1,17 +1,23 @@
-""" Class definition for LightBase. """
+"""
+``scenesim.display.lightbase``
+==============================
+
+Class definition for LightBase.
+
+"""
 import atexit
 import os
 import sys
 ##
-from libpanda import BitMask32
 from numpy import fromstring
+from panda3d.core import (AmbientLight, BitMask32, Camera, Filename,
+                          FrameBufferProperties, GraphicsEngine,
+                          GraphicsOutput, GraphicsPipe,
+                          GraphicsPipeSelection, ModelNode, NodePath,
+                          PNMImage, PerspectiveLens, PointLight,
+                          RescaleNormalAttrib, Texture, TexturePool,
+                          WindowProperties)
 from panda3d.core import Loader as PandaLoader
-from panda3d.core import TexturePool
-from pandac.PandaModules import (
-    AmbientLight, Camera, Filename, FrameBufferProperties, GraphicsEngine,
-    GraphicsOutput, GraphicsPipe, GraphicsPipeSelection, ModelNode, NodePath,
-    PNMImage, PerspectiveLens, PointLight, RescaleNormalAttrib, Texture,
-    WindowProperties)
 from path import path
 
 
@@ -22,7 +28,6 @@ class Loader(object):
     #
     # PandaLoader.loadAsync
     # TexturePool.loadTexture
-
     panda_loader = PandaLoader.getGlobalPtr()
     texture_loader = TexturePool
     load_model = panda_loader.loadSync
@@ -47,7 +52,7 @@ class LightBase(object):
         atexit.register(self._exitfunc)
 
     def init_graphics(self):
-        """ Creates GraphicsEngine, GraphicsPipe, and loader """
+        """Creates GraphicsEngine, GraphicsPipe, and loader."""
         # Get a handle to the graphics pipe selector
         selection = GraphicsPipeSelection.getGlobalPtr()
         # Check for DISPLAY
@@ -69,7 +74,12 @@ class LightBase(object):
 
     @staticmethod
     def init_fbp():
-        """ Initial / default FrameBufferProperties """
+        """Initial / default FrameBufferProperties.
+
+        Return:
+            (FrameBufferProperties): FrameBufferProperties object.
+
+        """
         fbp = FrameBufferProperties()
         fbp.setRgbColor(1)
         fbp.setColorBits(1)
@@ -79,7 +89,16 @@ class LightBase(object):
 
     @staticmethod
     def init_wp(window_type, size):
-        """ Initial / default WindowProperties """
+        """Initial / default WindowProperties.
+
+        Args:
+            window_type (str): Window type.
+            size (Iterable, 2): Width, height.
+
+        Return:
+            (WindowProperties): WindowProperties object.
+
+        """
         if window_type == "onscreen":
             wp = WindowProperties.getDefault()
             wp.setSize(size[0], size[1])
@@ -89,42 +108,57 @@ class LightBase(object):
 
     def make_window(self, size=None, name=None, sort=0, xflags=0,
                     host_out=None):
-        """ Create an onscreen window -- high-level interface for
-        make_output"""
+        """Create an onscreen window. High-level interface for `make_output`
 
-        # Handle size
+        Keyword Args:
+            size (Iterable, 2): Width, height.
+            name (str): Window name.
+            sort (int): Sort order.
+            xflags (int): GraphicsPipe bit flags.
+            host_out (GraphicsOutput): Output object.
+
+        Return:
+            (GraphicsOutput): Output object.
+
+        """
+        # Set size.
         if size is None and host_out is not None:
             size = (host_out.getFbXSize(), host_out.getFbYSize())
         elif size is None:
             raise ValueError("Size not available.")
-
-        # Initialize WindowProperties
+        # Initialize WindowProperties.
         wp = self.init_wp("onscreen", size)
-
-        # Create window
+        # Create window.
         output = self.make_output("onscreen", name, sort, wp=wp,
                                   xflags=xflags, host_out=host_out)
-
         # Handle failure to create window (returns None)
         if output is None:
             raise StandardError("Window creation failed, not sure why.")
-
         return output
 
     def make_buffer(self, size=None, name=None, sort=10, xflags=0,
                     host_out=None):
-        """ Makes an offscreen buffer -- high-level interface for
-        make_output"""
+        """Create an offscreen buffer. High-level interface for
+        `make_output`.
 
-        # Handle size
+        Keyword Args:
+            size (Iterable, 2): Width, height.
+            name (str): Window name.
+            sort (int): Sort order.
+            xflags (int): GraphicsPipe bit flags.
+            host_out (GraphicsOutput): Output object.
+
+        Return:
+            (GraphicsOutput): Output object.
+
+        """
+        # Set size.
         if size is None and host_out is not None:
             size = (host_out.getFbXSize(), host_out.getFbYSize())
         elif size is None:
             raise ValueError("Size not available.")
-
         # Initialize WindowProperties
         wp = self.init_wp("offscreen", size)
-
         # Create the buffer
         output = self.make_output("offscreen", name, sort, wp=wp,
                                   xflags=xflags, host_out=host_out)
@@ -147,7 +181,24 @@ class LightBase(object):
 
     def make_texture_buffer(self, size=None, name=None, sort=10,
                             xflags=0, mode=None, bitplane=None, host_out=None):
-        """ Makes an offscreen buffer and adds a render texture """
+        """Makes an offscreen buffer and adds a render texture.
+
+        Keyword Args:
+            size (Iterable, 2): Width, height.
+            name (str): Window name.
+            sort (int): Sort order.
+            xflags (int): GraphicsPipe bit flags.
+            mode (GraphicsOutput.RenderTextureMode): see
+                :py:meth:`add_render_texture` for possible values.
+            bitplane (DrawableRegion.RenderTexturePlane): see
+                :py:meth:`add_render_texture` for possible values.
+            host_out (GraphicsOutput): Output object.
+
+        Return:
+            (GraphicsOutput): Output object.
+            (Texture): Texture object.
+
+        """
         # Make the offscreen buffer
         output = self.make_buffer(size, name, sort, xflags, host_out)
         # Add the texture
@@ -158,8 +209,24 @@ class LightBase(object):
 
     def make_output(self, window_type, name=None, sort=10, fbp=None, wp=None,
                     xflags=0, host_out=None):
-        """ Makes a GraphicsOutput object and stores it in
-        self.output_list. This is the low-level interface."""
+        """Create a GraphicsOutput object and store in self.output_list.
+        This is the low-level interface.
+
+        Args:
+            window_type (str): Window type.
+
+        Keyword Args:
+            name (str): Window name.
+            sort (int): Sort order.
+            fbp (FrameBufferProperties): FrameBufferProperties object.
+            wp (WindowProperties): WindowProperties object.
+            xflags (int): GraphicsPipe bit flags.
+            host_out (GraphicsOutput): Output object.
+
+        Return:
+            (GraphicsOutput): Output object.
+
+        """
         # Input handling / defaults
         if name is None:
             name = window_type + "_win"
@@ -196,46 +263,64 @@ class LightBase(object):
         return output
 
     def add_to_output_gsg_lists(self, output):
-        """ Adds the output and Gsg to the instance's running list. """
+        """Adds the `output` and GSG to the instance's running list.
+
+        Args:
+            output (GraphicsOutput): Graphics output.
+
+        """
         self.output_list.append(output)
         self.gsg_list.append(output.getGsg())
 
     def remove_from_output_gsg_lists(self, output):
-        """ Removes the output and Gsg from the instance's running list. """
+        """Removes the `output` and GSG from the instance's running list.
+
+        Args:
+            output (GraphicsOutput): Graphics output.
+
+        """
         self.output_list.remove(output)
         self.gsg_list.remove(output.getGsg())
 
     @staticmethod
     def add_render_texture(output, mode=None, bitplane=None):
-        """ Similar to GraphicsOutput's addRenderTexture.
+        """Add render texture to `output`.
 
-        ** Possible mode values **
-        GraphicsOutput.RTMNone
-        GraphicsOutput.RTMBindOrCopy
-        GraphicsOutput.RTMCopyTexture
-        GraphicsOutput.RTMCopyRam
-        GraphicsOutput.RTMTriggeredCopyTexture
-        GraphicsOutput.RTMTriggeredCopyRam
+        Args:
+            output (GraphicsOutput): Graphics output.
 
-        ** Possible bitplane values **
-        GraphicsOutput.RTPStencil
-        GraphicsOutput.RTPDepthStencil
-        GraphicsOutput.RTPColor
-        GraphicsOutput.RTPAuxRgba0
-        GraphicsOutput.RTPAuxRgba1
-        GraphicsOutput.RTPAuxRgba2
-        GraphicsOutput.RTPAuxRgba3
-        GraphicsOutput.RTPAuxHrgba0
-        GraphicsOutput.RTPAuxHrgba1
-        GraphicsOutput.RTPAuxHrgba2
-        GraphicsOutput.RTPAuxHrgba3
-        GraphicsOutput.RTPAuxFloat0
-        GraphicsOutput.RTPAuxFloat1
-        GraphicsOutput.RTPAuxFloat2
-        GraphicsOutput.RTPAuxFloat3
-        GraphicsOutput.RTPDepth
-        GraphicsOutput.RTPCOUNT
+        Keyword Args:
+            mode (GraphicsOutput.RenderTextureMode):
+                | RTMNode
+                | RTMBindOrCopy
+                | RTMCopyTexture
+                | RTMCopyRam
+                | RTMTriggeredCopyTexture
+                | RTMTriggeredCopyRam
+            bitplane (DrawableRegion.RenderTexturePlane):
+                | RTPStencil
+                | RTPDepthStencil
+                | RTPColor
+                | RTPAuxRgba0
+                | RTPAuxRgba1
+                | RTPAuxRgba2
+                | RTPAuxRgba3
+                | RTPAuxHrgba0
+                | RTPAuxHrgba1
+                | RTPAuxHrgba2
+                | RTPAuxHrgba3
+                | RTPAuxFloat0
+                | RTPAuxFloat1
+                | RTPAuxFloat2
+                | RTPAuxFloat3
+                | RTPDepth
+                | RTPCOUNT
+
+        Return:
+            (Texture): Texture object.
+
         """
+        # Mode.
         if mode is None:
             mode = GraphicsOutput.RTMBindOrCopy
         elif isinstance(mode, str):
@@ -244,34 +329,34 @@ class LightBase(object):
             bitplane = GraphicsOutput.RTPColor
         elif isinstance(bitplane, str):
             bitplane = getattr(GraphicsOutput, bitplane)
-        tex = Texture()
+        # Bitplane.
         if bitplane is GraphicsOutput.RTPColor:
             fmt = Texture.FLuminance
         elif bitplane is GraphicsOutput.RTPDepth:
             fmt = Texture.FDepthComponent
+        # Get a handle to the texture.
+        tex = Texture()
         tex.setFormat(fmt)
-        # Add the texture to the buffer
+        # Add the texture to the buffer.
         output.addRenderTexture(tex, mode, bitplane)
-        # Get a handle to the texture
-        assert (tex == output.getTexture(output.countTextures() - 1),
-                "Texture wasn't created properly.")
         tex.clearRamImage()
         return tex
 
     def close_output(self, output):
-        """
-        Closes the indicated output and removes it from the list.
+        """Closes the indicated `output` and removes it from the list.
+
+        Args:
+            output (GraphicsOutput): Graphics output.
+
         """
         output.setActive(False)
-
         # First, remove all of the cameras associated with display
         # regions on the window.
         num_regions = output.getNumDisplayRegions()
         for i in range(num_regions):
             dr = output.getDisplayRegion(i)
             dr.setCamera(NodePath())
-
-        # Remove this output from the list
+        # Remove this output from the list.
         self.remove_from_output_gsg_lists(output)
         # Now we can actually close the window.
         engine = output.getEngine()
@@ -280,9 +365,7 @@ class LightBase(object):
         engine.renderFrame()
 
     def close_all_outputs(self):
-        """ Closes all of this instance's outputs """
-
-        # Close them each
+        """Closes all of this instance's outputs."""
         for output in self.output_list:
             self.close_output(output)
         # Clear the output list
@@ -303,6 +386,23 @@ class LightBase(object):
         If useCamera is not None, it is a NodePath to be used as the
         camera to apply to the window, rather than creating a new
         camera.
+
+        Args:
+            output (GraphicsOutput): Output object.
+
+        Keyword Args:
+            sort (int): Sort order.
+            dr_dims (Iterable, 4): DisplayRegion dimensions.
+            aspect_ratio (float): Aspect ratio.
+            clear_depth (bool): Indicator to clear depth buffer.
+            clear_color (bool): Indicator to clear color buffer.
+            lens (Lens): Lens object.
+            cam_name (str): Window name.
+            mask (BitMask32): Bit mask that indicates which objects to render.
+
+        Return:
+            (NodePath): Camera nodepath.
+
         """
 
         # self.cameras is the parent node of all cameras: a node that
@@ -326,13 +426,11 @@ class LightBase(object):
         if lens is not None:
             cam_node.setLens(lens)
         camera = self.cameras.attachNewNode(cam_node)
-
         # Masks out part of scene from camera
         if mask is not None:
             if (isinstance(mask, int)):
                 mask = BitMask32(mask)
             cam_node.setCameraMask(mask)
-
         # Make a display region
         dr = output.makeDisplayRegion(*dr_dims)
         # By default, we do not clear 3-d display regions (the entire
@@ -350,14 +448,20 @@ class LightBase(object):
 
     @staticmethod
     def get_aspect_ratio(output):
-        """ Returns the actual aspect ratio of the indicated (or main
-         window), or the default aspect ratio if there is not yet a
-         main window."""
+        """Returns aspect ratio of `output`'s window, or default aspect
+        ratio if it has no window.
 
+        Args:
+            output (GraphicsOutput): Graphics output.
+
+        Return:
+            (float): Aspect ratio.
+
+        """
         aspect_ratio = 1
         if output.hasSize():
-            aspect_ratio = float(output.getSbsLeftXSize()) / \
-                           float(output.getSbsLeftYSize())
+            aspect_ratio = (float(output.getSbsLeftXSize()) /
+                            float(output.getSbsLeftYSize()))
         else:
             wp = output.getRequestedProperties()
             if not wp.hasSize():
@@ -367,58 +471,89 @@ class LightBase(object):
 
     @staticmethod
     def make_lights():
-        """ Create one point light and an ambient light."""
+        """Create one point light and an ambient light.
+
+        Return:
+           (NodePath): Lights nodepath.
+
+        """
         lights = NodePath("lights")
-        # Create point lights
+        # Create point lights.
         plight = PointLight("plight1")
         light = lights.attachNewNode(plight)
         light.setPos((3, -10, 2))
         light.lookAt(0, 0, 0)
-        # Create ambient light
+        # Create ambient light.
         alight = AmbientLight("alight")
         alight.setColor((0.75, 0.75, 0.75, 1.0))
         lights.attachNewNode(alight)
         return lights
 
     def setup_root(self):
-        """
-        Creates the root scene graph, the primary scene graph for
-        rendering 3-d geometry.
-        """
+        """Set up the scene graph."""
         self.root = NodePath("root")
         self.root.setAttrib(RescaleNormalAttrib.makeDefault())
-        self.root.setTwoSided(0)
-        self.backface_culling_enabled = 1
-        self.texture_enabled = 1
-        self.wireframe_enabled = 0
+        self.root.setTwoSided(False)
+        self.backface_culling_enabled = True
+        self.texture_enabled = True
+        self.wireframe = False
 
-    def wireframe_on(self):
-        """ Toggle wireframe mode on."""
-        self.root.setRenderModeWireframe(100)
-        self.root.setTwoSided(1)
-        self.wireframe_enabled = 1
+    @property
+    def wireframe(self):
+        """(Property) Get wireframe mode.
 
-    def wireframe_off(self):
-        """ Toggle wireframe mode off."""
-        self.root.clearRenderMode()
-        self.root.setTwoSided(not self.backface_culling_enabled)
-        self.wireframe_enabled = 0
+        Return:
+            (bool): Indicates wireframe ON.
+
+        """
+        return self._wireframe
+
+    @wireframe.setter
+    def wireframe(self, val):
+        """(Property) Set wireframe mode.
+
+        Args:
+            val (bool): Indicates wireframe ON.
+
+        """
+        if self.wireframe:
+            self.root.clearRenderMode()
+            self.root.setTwoSided(not self.backface_culling_enabled)
+        else:
+            self.root.setRenderModeWireframe(100)
+            self.root.setTwoSided(True)
 
     @staticmethod
     def trigger_copy(output):
-        """ This signals the texture to be pushed to RAM after the
-        next render_frame"""
+        """Signals the texture to be pushed to RAM after the next
+        render_frame.
+
+        Args:
+            output (GraphicsOutput): Graphics output.
+
+        """
         output.trigger_copy()
 
     def render_frame(self):
-        """ Render the frame."""
+        """Render the frame."""
         # If you're trying to read the texture buffer, remember to
         # call self.trigger_copy()
         self.engine.renderFrame()
 
     @staticmethod
-    def get_tex_image(tex, freshape=True):
-        """ Returns numpy array containing image in tex. """
+    def get_tex_array(tex, reshape=True):
+        """Returns image (as ndarray) in `tex`.
+
+        Args:
+            tex (Texture): Texture handle.
+
+        Keyword Args:
+            reshape (bool): Indicator to reshape image array to 2D.
+
+        Return:
+            (ndarray): Image array.
+
+        """
         # Remember to call self.trigger_copy() before
         # self.render_frame(), or the next frame won't be pushed to RAM
         if not tex.hasUncompressedRamImage():
@@ -436,7 +571,7 @@ class LightBase(object):
             # texel_width = tex.getComponentWidth()
             texdata = tex.getUncompressedRamImage().getData()
             img = fromstring(texdata, dtype=dtype)
-            if freshape:
+            if reshape:
                 shape = [tex.getYSize(), tex.getXSize(), -1]
                 n_channels = tex.getNumComponents()
                 if n_channels == 4:
@@ -450,8 +585,16 @@ class LightBase(object):
         return img
 
     @staticmethod
-    def get_image(tex):
-        """ Returns PNMImage containing image in tex. """
+    def get_tex_image(tex):
+        """Returns image (as PNMImage) in `tex`.
+
+        Args:
+            tex (Texture): Texture handle.
+
+        Return:
+            (PNMImage): Image object.
+
+        """
         # Remember to call self.trigger_copy() before
         # self.render_frame(), or the next frame won't be pushed to RAM.
         if not tex.hasRamImage():
@@ -463,24 +606,35 @@ class LightBase(object):
 
     @staticmethod
     def screenshot(output, pth=None):
-        """ Similar to ShowBase's screenshot """
+        """Save screenshot of `output`.
+
+        Args:
+            output (GraphicsOutput): Graphics output.
+
+        Keyword Args:
+            pth (str): Path to save screenshot.
+
+        Return:
+            (bool): Indicates successful save.
+
+        """
         if pth is None:
             filename = GraphicsOutput.makeScreenshotFilename()
         else:
             filename = Filename(pth)
         if isinstance(output, GraphicsOutput):
-            f_success = output.saveScreenshot(filename)
+            success = output.saveScreenshot(filename)
         elif isinstance(output, Texture):
             if output.getZSize() > 1:
-                f_success = output.write(filename, 0, 0, 1, 0)
+                success = output.write(filename, 0, 0, 1, 0)
             else:
-                f_success = output.write(filename)
+                success = output.write(filename)
         else:
             raise TypeError("Unhandled output type: " + type(output))
-        return f_success
+        return success
 
     def destroy(self):
-        """ self.__exitfunc() calls this automatically """
+        """Close outputs associated with this instance."""
         self.close_all_outputs()
         if getattr(self, "engine", None):
             self.engine.removeAllWindows()
@@ -489,15 +643,10 @@ class LightBase(object):
             self.pipe = None
 
     def _exitfunc(self):
-        """ Atexit function."""
+        """atexit function."""
         self.destroy()
-
-    def user_exit(self):
-        """ The user has requested we exit the program. """
-        self._exitfunc()
-        sys.exit()
 
     @staticmethod
     def destroy_windows():
-        """ General destroy windows method."""
+        """Destroy all graphics windows globally."""
         GraphicsEngine.getGlobalPtr().removeAllWindows()

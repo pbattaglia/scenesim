@@ -1,26 +1,64 @@
-""" Various graphics geometry manipulation functions."""
+"""
+``scenesim.display.geometry``
+=============================
+
+Functions for manipulating graphics geometry.
+
+"""
 import numpy as np
 
 
 def zbuffer_to_z(zb, near, far):
-    """ Inputs Z-buffer image and returns each pixel's distance from
-    the camera along the z-axis."""
+    """Inputs Z-buffer image and returns each pixel's distance from the
+    camera along the Z-axis.
+
+    Args:
+       zb (numpy.ndarray, 2D): Z-buffer image.
+       near (float): Distance of near camera plane.
+       far (float): Distance of far camera plane.
+
+    Return:
+       (numpy.ndarray, 2D): Z-distance of each pixel.
+
+    """
     z = far * near / (far - zb * (far - near))
     return z
 
 
 def img_to_d(xi, yi, zb, near, far):
-    """ Inputs image x, y coordinates and Z-buffer image, and returns
-    distance from the camera's position to eachpoint."""
+    """Inputs image X, Y coordinates and Z-buffer image, and returns
+    Euclidean distance from the camera's position to each point.
+
+    Args:
+       xi, yi (numpy.ndarray, 2D): X-, Y-coordinates of each pixel.
+       zb (numpy.ndarray, 2D): Z-buffer image.
+       near (float): Distance of near camera plane.
+       far (float): Distance of far camera plane.
+
+    Return:
+       (numpy.ndarray, 2D): Euclidean distance of each pixel.
+
+    """
     z = zbuffer_to_z(zb, near, far)
     phi = np.arctan2(np.sqrt(xi ** 2 + yi ** 2), near)
-    d = z * np.cos(phi)
+    d = z / np.cos(phi)
     return d
 
 
 def img_to_xyz(xi, yi, zb, near, far):
-    """ Inputs image x, y coordinates and Z-buffer image, and returns
-    the pixels' x, y, z coordinates in 3D."""
+    """Inputs image X, Y coordinates and Z-buffer image, and returns the
+    pixels' X, Y, Z coordinates in 3D.
+
+    Args:
+       xi, yi (numpy.ndarray, 2D): X-, Y-coordinates of each pixel.
+       zb (numpy.ndarray, 2D): Z-buffer image.
+       near (float): Distance of near camera plane.
+       far (float): Distance of far camera plane.
+
+    Return:
+       (numpy.ndarray, 3x2D): X-, Y-, Z-coordinates of each pixel.
+
+    """
     z = zbuffer_to_z(zb, near, far)
     x = xi * z / near
     y = yi * z / near
@@ -29,7 +67,15 @@ def img_to_xyz(xi, yi, zb, near, far):
 
 
 def get_projection_mat(camera):
-    """ Projection matrix of camera."""
+    """Projection matrix of camera.
+
+    Args:
+        camera (panda3d.core.NodePath): Camera NodePath.
+
+    Return:
+        (numpy.matrix, 4x4): Projection matrix (homogeneous).
+    
+    """
     lens = camera.node().getLens()
     frust_mat = np.matrix(lens.getProjectionMat())
     cam_mat = np.matrix(camera.getNetTransform().getMat())
@@ -38,11 +84,15 @@ def get_projection_mat(camera):
 
 
 def extrude(point2d, proj_mat):
-    """ Compute the 3D inverse perspective projection of a 2D point.
-    point2d : Nx{2} set of 2D points
-    proj_mat : 4x4 camera projection matrix
-    #
-    point3d : Nx3 inverse projected 3D points
+    """Compute the 3D inverse perspective projection of a 2D point.
+
+    Args:
+        point2d (numpy.ndarray, Nx2): Array of 2D points.
+        proj_mat (numpy.matrix, 4x4): Projection matrix (homogeneous).
+
+    Return:
+        (numpy.ndarray, Nx3): Array of inverse projected 3D points.
+
     """
     # Inverse projection matrix
     proj_mat_inv = np.linalg.inv(proj_mat)
@@ -60,11 +110,16 @@ def extrude(point2d, proj_mat):
 
 def project(point3d, proj_mat):
     """ Compute the 2D perspective projection of 3D point(s).
-    point3d : Nx{3,4} set of 3D points (if Nx4, they are homogeneous coords)
-    proj_mat : 4x4 camera projection matrix
-    #
-    point2d : Nx2 projected 2D points
-    f_behind : indicates points that are behind the camera
+
+    Args:
+        point3d (numpy.ndarray, Nx{3,4}): Array of 3D (or 4D, if homogeneous) points.
+        proj_mat (numpy.matrix, 4x4): Projection matrix (homogeneous).
+
+    Return:
+        (numpy.ndarray, Nx2): Array of inverse projected 2D points.
+    
+        (numpy.ndarray, N): Indicates points that are behind the camera.
+    
     """
     # Cast to np.array
     point3d = np.array(point3d)
@@ -89,7 +144,17 @@ def project(point3d, proj_mat):
 
 
 def plane_intersection(line3, point3, normal3):
-    """ Compute point of intersection between a line and a plane."""
+    """ Compute point of intersection between a line and a plane.
+
+    Args:
+        line3 (numpy.ndarray, 2x3): 3D line defined by endpoints.
+        point3 (numpy.ndarray, 3): 3D point on the plane.
+        normal3 (numpy.ndarray, 3): 3D normal to the plane.
+
+    Return:
+        (numpy.ndarray, 3): 3D intersection point.
+    
+    """
     # Line ray
     ray = np.diff(line3, axis=0).ravel()
     # https://en.wikipedia.org/wiki/Line-plane_intersection

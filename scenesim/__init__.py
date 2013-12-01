@@ -1,4 +1,3 @@
-""" scenesim library."""
 from panda3d.core import loadPrcFile
 from path import path
 

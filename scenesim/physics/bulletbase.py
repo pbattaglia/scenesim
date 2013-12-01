@@ -1,4 +1,10 @@
-""" BulletBase interfaces with Panda3d's Bullet module."""
+"""
+``scenesim.physics.bulletbase``
+===============================
+
+BulletBase interface with Panda3d's Bullet module.
+
+"""
 from collections import Iterable
 from contextlib import contextmanager
 from functools import update_wrapper
@@ -6,14 +12,14 @@ from itertools import combinations, izip
 from math import isnan, sqrt
 from warnings import warn
 ##
-from libpanda import BitMask32, Point3, Quat, Vec3
 import numpy as np
 from panda3d.bullet import (BulletBaseCharacterControllerNode, BulletBodyNode,
                             BulletConstraint, BulletDebugNode,
                             BulletGenericConstraint, BulletGhostNode,
                             BulletVehicle, BulletWorld)
-from panda3d.core import PythonCallbackObject, TransformState
-from pandac.PandaModules import NodePath
+from panda3d.core import (BitMask32, NodePath, Point3,
+                          PythonCallbackObject, Quat, TransformState,
+                          Vec3)
 ##
 from pdb import set_trace as BP
 

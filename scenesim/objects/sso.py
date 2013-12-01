@@ -1,4 +1,10 @@
-""" Basic SceneSim objects."""
+"""
+``scenesim.objects.sso``
+========================
+
+Basic SceneSim objects.
+
+"""
 import cPickle as pickle
 from collections import Iterable
 from functools import partial
@@ -7,7 +13,7 @@ from itertools import izip
 from pandac.PandaModules import NodePath, NodePathCollection, PandaNode
 from path import path
 ##
-from scenesim.lib import combomethod
+from scenesim.util import combomethod
 
 
 class SSO(NodePath):

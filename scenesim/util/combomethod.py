@@ -1,4 +1,10 @@
-""" Combomethod class."""
+"""
+``scenesim.util.combomethod``
+=============================
+
+Combomethod class.
+
+"""
 from functools import wraps
 
 

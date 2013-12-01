@@ -1,5 +1,9 @@
 """
-Quaternion tools
+``scenesim.util.quatlib``
+=========================
+
+Quaternion tools.
+
 """
 from itertools import imap, product
 import numpy as np
