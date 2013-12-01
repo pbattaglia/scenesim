@@ -1,15 +1,16 @@
 SceneSim
 ========
 
-- Create models of scenes whose :ref:`objects <objects>` have geometric, graphical, and physical attributes.
-- :ref:`Display <display>` them as images. 
-- Simulate them under :ref:`physics <physics>`.
+- Create models of scenes whose objects have geometric, graphical, and
+  physical attributes.
+- Display them as images. 
+- Simulate them under physics.
 
 .. |project repository| replace:: **project repository**
 .. _project repository: http://github.com/pbattaglia/scenesim
 
-Check out the |project repository|_ (on `github.com
-<http://github.com>`_), or just clone with *git*: 
+Go to the |project repository|_ (on `github.com
+<http://github.com>`_), or just clone it with *git*: 
 
 | ``git clone https://github.com/pbattaglia/scenesim.git``
 
