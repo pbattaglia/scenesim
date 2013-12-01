@@ -1,0 +1,13 @@
+*.pyc
+*.pyo
+*~
+\#*
+*.aux
+*.dvi
+*.log
+*.pdf
+*.bbl
+*.blg
+*.npy
+*.npz
+*.so
