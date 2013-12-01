@@ -9,15 +9,15 @@ import atexit
 import os
 import sys
 ##
-from libpanda import BitMask32
 from numpy import fromstring
-from panda3d.core import Loader as PandaLoader
-from panda3d.core import (AmbientLight, Camera, Filename,
+from panda3d.core import (AmbientLight, BitMask32, Camera, Filename,
                           FrameBufferProperties, GraphicsEngine,
-                          GraphicsOutput, GraphicsPipe, GraphicsPipeSelection,
-                          ModelNode, NodePath, PNMImage, PerspectiveLens,
-                          PointLight, RescaleNormalAttrib, Texture,
-                          TexturePool, WindowProperties)
+                          GraphicsOutput, GraphicsPipe,
+                          GraphicsPipeSelection, ModelNode, NodePath,
+                          PNMImage, PerspectiveLens, PointLight,
+                          RescaleNormalAttrib, Texture, TexturePool,
+                          WindowProperties)
+from panda3d.core import Loader as PandaLoader
 from path import path
 
 
@@ -28,7 +28,6 @@ class Loader(object):
     #
     # PandaLoader.loadAsync
     # TexturePool.loadTexture
-
     panda_loader = PandaLoader.getGlobalPtr()
     texture_loader = TexturePool
     load_model = panda_loader.loadSync
