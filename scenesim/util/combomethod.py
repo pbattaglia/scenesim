@@ -13,18 +13,16 @@ class combomethod(object):
     definitions to make a method both a class method and instance
     method.
 
-    A typical use case is:
+    Example:
+        @combomethod
+        def func(combo):
+            if isinstance(combo, type):
+                # Do class stuff.
+            else:
+                # Do instance stuff.
 
-    @combomethod
-    def func(combo):
-        if isinstance(combo, type):
-            # Do class stuff.
-        else:
-            # Do instance stuff.
-
-    Originally found at:
-
-    http://stackoverflow.com/questions/2589690/creating-a-method-that-is-simultaneously-an-instance-and-class-method
+    **Borrowed from:**
+        http://stackoverflow.com/questions/2589690/creating-a-method-that-is-simultaneously-an-instance-and-class-method
     """
 
     def __init__(self, method):
