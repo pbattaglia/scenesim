@@ -516,12 +516,13 @@ class LightBase(object):
             val (bool): Indicates wireframe ON.
 
         """
-        if self.wireframe:
-            self.root.clearRenderMode()
-            self.root.setTwoSided(not self.backface_culling_enabled)
-        else:
+        self._wireframe = val
+        if val:
             self.root.setRenderModeWireframe(100)
             self.root.setTwoSided(True)
+        else:
+            self.root.clearRenderMode()
+            self.root.setTwoSided(not self.backface_culling_enabled)
 
     @staticmethod
     def trigger_copy(output):
