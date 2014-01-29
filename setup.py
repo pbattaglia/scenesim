@@ -3,7 +3,7 @@ from distutils.core import setup
 
 
 root_pkg = "scenesim"
-sub_pkgs = ["cfg", "display", "lib", "objects", "physics", "tests"]
+sub_pkgs = ["cfg", "display", "objects", "physics", "tests", "util"]
 packages = [root_pkg] + ["%s.%s" % (root_pkg, sub_pkg) for sub_pkg in sub_pkgs]
 
 

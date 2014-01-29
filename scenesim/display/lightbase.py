@@ -110,7 +110,7 @@ class LightBase(object):
                     host_out=None):
         """Create an onscreen window. High-level interface for `make_output`
 
-        Keyword Args:
+        Kwargs:
             size (Iterable, 2): Width, height.
             name (str): Window name.
             sort (int): Sort order.
@@ -141,7 +141,7 @@ class LightBase(object):
         """Create an offscreen buffer. High-level interface for
         `make_output`.
 
-        Keyword Args:
+        Kwargs:
             size (Iterable, 2): Width, height.
             name (str): Window name.
             sort (int): Sort order.
@@ -183,7 +183,7 @@ class LightBase(object):
                             xflags=0, mode=None, bitplane=None, host_out=None):
         """Makes an offscreen buffer and adds a render texture.
 
-        Keyword Args:
+        Kwargs:
             size (Iterable, 2): Width, height.
             name (str): Window name.
             sort (int): Sort order.
@@ -215,7 +215,7 @@ class LightBase(object):
         Args:
             window_type (str): Window type.
 
-        Keyword Args:
+        Kwargs:
             name (str): Window name.
             sort (int): Sort order.
             fbp (FrameBufferProperties): FrameBufferProperties object.
@@ -289,7 +289,7 @@ class LightBase(object):
         Args:
             output (GraphicsOutput): Graphics output.
 
-        Keyword Args:
+        Kwargs:
             mode (GraphicsOutput.RenderTextureMode):
                 | RTMNode
                 | RTMBindOrCopy
@@ -390,7 +390,7 @@ class LightBase(object):
         Args:
             output (GraphicsOutput): Output object.
 
-        Keyword Args:
+        Kwargs:
             sort (int): Sort order.
             dr_dims (Iterable, 4): DisplayRegion dimensions.
             aspect_ratio (float): Aspect ratio.
@@ -548,7 +548,7 @@ class LightBase(object):
         Args:
             tex (Texture): Texture handle.
 
-        Keyword Args:
+        Kwargs:
             reshape (bool): Indicator to reshape image array to 2D.
 
         Return:
@@ -612,7 +612,7 @@ class LightBase(object):
         Args:
             output (GraphicsOutput): Graphics output.
 
-        Keyword Args:
+        Kwargs:
             pth (str): Path to save screenshot.
 
         Return:
