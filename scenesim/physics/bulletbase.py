@@ -297,8 +297,16 @@ class BulletBase(object):
             pass
 
     def set_axis_constraint(self, axis, on, disp=None):
-        """ Sets an axis constraint, so that bodies can/cannot
-        move in that direction."""
+        """Sets an axis constraint, so that bodies can/cannot
+        move in that direction.
+
+        Args:
+            axis (int): Axis number x=0, y=1, z=2.
+            on (bool): Whether to allow or disallow movement along the axis.
+
+        Kwargs:
+            disp (float): Displacement from 0.
+        """
         # Create the constraint vector.
         self.axis_constraint_fac[axis] = int(not on)
         self.axis_constraint_disp[axis] = disp if disp is not None else nan

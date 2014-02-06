@@ -377,7 +377,8 @@ class PSO(SSO):
 
 class RBSO(PSO):
     type_ = BulletRigidBodyNode
-    _prop_tags = ("linear_velocity", "angular_velocity", "mass", "gravity")
+    _prop_tags = ("linear_velocity", "angular_velocity", "mass", "gravity",
+                  "into_collide_mask")
     _res_tags = ()
 
     @wraps(type_.set_mass, assigned=("__name__", "__doc__"))
@@ -412,6 +413,15 @@ class RBSO(PSO):
     @wraps(type_.get_gravity, assigned=("__name__", "__doc__"))
     def get_gravity(self):
         return self.node().get_gravity()
+
+    @wraps(type_.set_into_collide_mask, assigned=("__name__", "__doc__"))
+    def set_into_collide_mask(self, into_collide_mask):
+        self.node().set_into_collide_mask(into_collide_mask)
+
+    @cast_c_float
+    @wraps(type_.get_into_collide_mask, assigned=("__name__", "__doc__"))
+    def get_into_collide_mask(self):
+        return self.node().get_into_collide_mask()
 
 
 class CPSO(RBSO):
