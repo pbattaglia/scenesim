@@ -17,7 +17,7 @@ from libpanda import Mat4, Point3, TransformState, Vec3
 import numpy as np
 import panda3d.bullet as p3b
 from panda3d.bullet import BulletBodyNode, BulletGhostNode, BulletRigidBodyNode
-from panda3d.core import NodePathCollection
+from panda3d.core import BitMask32, NodePathCollection
 ##
 from scenesim.objects.sso import SSO
 ##
@@ -416,7 +416,7 @@ class RBSO(PSO):
 
     @wraps(type_.set_into_collide_mask, assigned=("__name__", "__doc__"))
     def set_into_collide_mask(self, into_collide_mask):
-        self.node().set_into_collide_mask(into_collide_mask)
+        self.node().set_into_collide_mask(Bitmask32(into_collide_mask))
 
     @cast_c_float
     @wraps(type_.get_into_collide_mask, assigned=("__name__", "__doc__"))
