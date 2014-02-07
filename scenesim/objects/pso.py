@@ -159,6 +159,18 @@ class ConeShape(BaseShape):
         self[0] = (scale[0] * self[0][0], scale[2] * self[0][1])
 
 
+class ConvexHullShape(BaseShape):
+    """ BulletConvexHullShape."""
+    bshape = p3b.BulletConvexHullShape
+    args0 = OrderedDict()
+
+    def scale(self, scale):
+        if scale[0] != scale[1]:
+            raise ValueError("%s does not support anisotropic x,y scaling" %
+                             self.bshape)
+        self[0] = (scale[0] * self[0][0], scale[2] * self[0][1])
+        
+
 class CylinderShape(BaseShape):
     """ BulletCylinderShape."""
     bshape = p3b.BulletCylinderShape
@@ -416,7 +428,7 @@ class RBSO(PSO):
 
     @wraps(type_.set_into_collide_mask, assigned=("__name__", "__doc__"))
     def set_into_collide_mask(self, into_collide_mask):
-        self.node().set_into_collide_mask(Bitmask32(into_collide_mask))
+        self.node().set_into_collide_mask(BitMask32(into_collide_mask))
 
     @cast_c_float
     @wraps(type_.get_into_collide_mask, assigned=("__name__", "__doc__"))
