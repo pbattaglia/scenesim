@@ -164,15 +164,27 @@ class ConvexHullShape(BaseShape):
     bshape = p3b.BulletConvexHullShape
     args0 = OrderedDict()
 
+    def __init__(self, *args, **kwargs):
+        super(ConvexHullShape, self).__init__()
+        self.array = args[0][0] if args[0] else None
+
+    def init(self):
+        """ Return the initialized Bullet*Shape and the xform."""
+        bshape, xform = super(ConvexHullShape, self).init()
+        if self.array is not None:
+            array = map(lambda a: Vec3(*a), self.array)
+            bshape.add_array(array)
+        return bshape, xform
+
     def scale(self, scale):
         if scale[0] != scale[1]:
             raise ValueError("%s does not support anisotropic x,y scaling" %
                              self.bshape)
         self[0] = (scale[0] * self[0][0], scale[2] * self[0][1])
-        
+
 
 class CylinderShape(BaseShape):
-    """ BulletCylinderShape."""
+    """ BulletCylinderShape. Height is along the Z axis."""
     bshape = p3b.BulletCylinderShape
     args0 = OrderedDict((("Radius", 0.5), ("Height", 1.)))
 
@@ -213,6 +225,7 @@ class ShapeManager(object):
         "Box": BoxShape,
         "Capsule": CapsuleShape,
         "Cone": ConeShape,
+        "ConvexHull": ConvexHullShape,
         "Cylinder": CylinderShape,
         "Plane": PlaneShape,
         "Sphere": SphereShape}
@@ -428,12 +441,7 @@ class RBSO(PSO):
 
     @wraps(type_.set_into_collide_mask, assigned=("__name__", "__doc__"))
     def set_into_collide_mask(self, into_collide_mask):
-        self.node().set_into_collide_mask(BitMask32(into_collide_mask))
-
-    @cast_c_float
-    @wraps(type_.get_into_collide_mask, assigned=("__name__", "__doc__"))
-    def get_into_collide_mask(self):
-        return self.node().get_into_collide_mask()
+        self.node().set_into_collide_mask(BitMask32.bit(into_collide_mask))
 
 
 class CPSO(RBSO):
