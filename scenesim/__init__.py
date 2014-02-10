@@ -7,4 +7,6 @@ ROOT_PATH = path(__path__[0]).abspath().split()[0]
 # Load scenesim-specific Panda3d settings.
 config_pth = path.joinpath(ROOT_PATH, "cfg", "Config.prc")
 if config_pth.isfile():
-    loadPrcFile(Filename.fromOsSpecific(config_pth).getFullpath())
+    cp = Filename.fromOsSpecific(config_pth)
+    cp.makeAbsolute()
+    loadPrcFile(cp)
