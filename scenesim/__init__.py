@@ -8,5 +8,5 @@ ROOT_PATH = path(__path__[0]).abspath().split()[0]
 config_pth = path.joinpath(ROOT_PATH, "cfg", "Config.prc")
 if config_pth.isfile():
     cp = Filename.fromOsSpecific(config_pth)
-    cp.makeAbsolute()
+    cp.makeTrueCase()
     loadPrcFile(cp)
