@@ -441,7 +441,13 @@ class RBSO(PSO):
 
     @wraps(type_.set_into_collide_mask, assigned=("__name__", "__doc__"))
     def set_into_collide_mask(self, into_collide_mask):
-        self.node().set_into_collide_mask(BitMask32.bit(into_collide_mask))
+        if isinstance(into_collide_mask, int):
+            into_collide_mask = BitMask32.bit(into_collide_mask)
+        self.node().set_into_collide_mask(into_collide_mask)
+
+    @wraps(type_.get_into_collide_mask, assigned=("__name__", "__doc__"))
+    def get_into_collide_mask(self):
+        return self.node().get_into_collide_mask()
 
 
 class CPSO(RBSO):
