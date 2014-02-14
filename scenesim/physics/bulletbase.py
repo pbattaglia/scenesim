@@ -404,8 +404,13 @@ class BulletBase(object):
         """ Set gravity on self.world. """
         self.world.setGravity(Vec3(*gravity))
 
+    def step_fast(self):
+        """Runs one physics step with BulletBase's default step parameters."""
+        self.world.doPhysics(self.sim_par["size"], self.sim_par["n_subs"],
+                             self.sim_par["size_sub"])       
+
     def step(self, *args, **kwargs):
-        """ Wrapper for BulletWorld.doPhysics."""
+        """Wraps BulletWorld.doPhysics. Handles forces."""
         # Defaults.
         dt = args[0] if len(args) > 0 else self.sim_par["size"]
         n_subs = args[1] if len(args) > 1 else self.sim_par["n_subs"]
