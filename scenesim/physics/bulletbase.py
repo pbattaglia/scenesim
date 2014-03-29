@@ -334,8 +334,8 @@ class BulletBase(object):
         # Attach them.
         for obj in bw_objs:
             # Warn about deactivation being enabled.
-            if (not suppress_deact_warn and
-                getattr(obj, "isDeactivationEnabled", lambda: True)()):
+            de = getattr(obj, "isDeactivationEnabled", lambda: True)()
+            if not suppress_deact_warn and de:
                 msg = "Deactivation is enabled on object: %s" % obj
                 warn(msg, DeactivationEnabledWarning)
             # Apply existing axis constraints to the objects.
@@ -407,7 +407,7 @@ class BulletBase(object):
     def step_fast(self):
         """Runs one physics step with BulletBase's default step parameters."""
         self.world.doPhysics(self.sim_par["size"], self.sim_par["n_subs"],
-                             self.sim_par["size_sub"])       
+                             self.sim_par["size_sub"])
 
     def step(self, *args, **kwargs):
         """Wraps BulletWorld.doPhysics. Handles forces."""
