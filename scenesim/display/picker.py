@@ -7,12 +7,11 @@ Picker: view and click objects in a scene.
 """
 ##
 from direct.directtools.DirectGeometry import LineNodePath
-from libpanda import BitMask32, Point3, Vec3, Vec4
 import networkx as nx
 import numpy as np
-from panda3d.core import (CollisionHandlerQueue, CollisionNode, CollisionRay,
-                          CollisionTraverser, GeomNode,
-                          RenderModeAttrib, TransparencyAttrib)
+from panda3d.core import (BitMask32, CollisionHandlerQueue, CollisionNode,
+                          CollisionRay, CollisionTraverser, GeomNode, Point3,
+                          RenderModeAttrib, TransparencyAttrib, Vec3, Vec4)
 ##
 from scenesim.display.viewer import Viewer
 from scenesim.objects.gso import GSO

@@ -5,10 +5,10 @@ from itertools import imap, izip
 from operator import mul
 import random
 ##
-from libpanda import Mat4, Point3, Quat, TransformState, Vec3, Vec4
 import numpy as np
 from panda3d.bullet import BulletBoxShape, BulletRigidBodyNode, BulletShape
-from pandac.PandaModules import GeomNode, ModelRoot, NodePath, PandaNode
+from panda3d.core import (GeomNode, Mat4, ModelRoot, NodePath, PandaNode,
+                          Point3, Quat, TransformState, Vec3, Vec4)
 from path import path
 ##
 from scenesim.objects.gso import GSO

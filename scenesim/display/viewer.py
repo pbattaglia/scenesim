@@ -11,11 +11,11 @@ from math import radians, tan
 import sys
 ##
 from direct.showbase.ShowBase import ShowBase
-from libpanda import AntialiasAttrib, BitMask32, PerspectiveLens, Point3, Vec3
 from numpy import array
 from panda3d.bullet import BulletRigidBodyNode
-from panda3d.core import ConfigVariableBool, WindowProperties
-from pandac.PandaModules import AmbientLight, NodePath, Spotlight
+from panda3d.core import (AmbientLight, AntialiasAttrib, BitMask32,
+                          ConfigVariableBool, NodePath, PerspectiveLens,
+                          Point3, Spotlight, Vec3, WindowProperties)
 from path import path
 ##
 from scenesim.display.geometry import (extrude, get_projection_mat,

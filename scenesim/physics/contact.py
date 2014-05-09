@@ -9,9 +9,9 @@ from collections import OrderedDict
 from contextlib import contextmanager
 from itertools import chain, combinations
 
-from libpanda import Vec3
 import networkx as nx
 import numpy as np
+from panda3d.core import Vec3
 from Polygon.Utils import convexHull
 from scenesim.objects.pso import PSO
 from scenesim.physics.bulletbase import BulletBase

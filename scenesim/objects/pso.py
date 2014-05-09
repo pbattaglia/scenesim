@@ -13,11 +13,11 @@ from functools import wraps
 from itertools import izip
 import re
 ##
-from libpanda import Mat4, Point3, TransformState, Vec3
 import numpy as np
 import panda3d.bullet as p3b
 from panda3d.bullet import BulletBodyNode, BulletGhostNode, BulletRigidBodyNode
-from panda3d.core import BitMask32, NodePathCollection
+from panda3d.core import (BitMask32, Mat4, NodePathCollection, Point3,
+                          TransformState, Vec3)
 ##
 from scenesim.objects.sso import SSO
 ##
@@ -448,6 +448,27 @@ class RBSO(PSO):
     @wraps(type_.get_into_collide_mask, assigned=("__name__", "__doc__"))
     def get_into_collide_mask(self):
         return self.node().get_into_collide_mask()
+
+    def set_center_of_mass(self, pos):
+        """Sets center of mass of object, with respect to node's
+        coordinate frame.
+
+        Args:
+            pos (seq): Position coordinates (3 elements).
+        """
+        ## TODO
+        self.node().set
+
+    def get_center_of_mass(self):
+        """Return center of mass of object, with respect to node's
+        coordinate frame.
+
+        Return:
+            (seq): Position coordinates (3 elements).
+        """
+        ## TODO
+        pos = self.node().get
+        return pos
 
 
 class CPSO(RBSO):

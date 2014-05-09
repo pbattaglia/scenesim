@@ -10,7 +10,7 @@ from collections import Iterable
 from functools import partial
 from itertools import izip
 ##
-from pandac.PandaModules import NodePath, NodePathCollection, PandaNode
+from panda3d.core import NodePath, NodePathCollection, PandaNode
 from path import path
 ##
 from scenesim.util import combomethod

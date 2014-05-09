@@ -6,9 +6,8 @@
 Class for visualizing simulations.
 
 """
-from libpanda import AntialiasAttrib, BitMask32
-from pandac.PandaModules import (AmbientLight, NodePath, PerspectiveLens,
-                                 Spotlight)
+from panda3d.core import (AmbientLight, AntialiasAttrib, BitMask32,
+                          NodePath, PerspectiveLens, Spotlight)
 from scenesim.display.lightbase import LightBase
 
 

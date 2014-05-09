@@ -323,7 +323,7 @@ def quat2mat(Q):
 
 # THIS IS JUST SCRAP CODE TO VERIFY QUATERNION FUNCTIONS AGAINST PANDA3D'S QUAT OBJECT...
 
-# from pandac.core import Quat
+# from panda3d.core import Quat
 
 # q0 = np.random.rand(3, 4, 2) * 2 - 1
 # q1 = np.random.rand(3, 4, 2) * 2 - 1
