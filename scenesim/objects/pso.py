@@ -333,7 +333,7 @@ class PSO(SSO):
         # Converts args so they're appropriate for self.type_.
         if len(args) == 0:
             args = ("",)
-        if isinstance(args[0], str):
+        if isinstance(args[0], (str, unicode)):
             args = (self.type_(args[0]),) + args[1:]
             tag = self.__class__
         else:
@@ -449,26 +449,41 @@ class RBSO(PSO):
     def get_into_collide_mask(self):
         return self.node().get_into_collide_mask()
 
-    def set_center_of_mass(self, pos):
-        """Sets center of mass of object, with respect to node's
-        coordinate frame.
+    def set_center_of_mass(self, com, other=None):
+        """Sets center of mass of object.
 
         Args:
             pos (seq): Position coordinates (3 elements).
-        """
-        ## TODO
-        self.node().set
 
-    def get_center_of_mass(self):
-        """Return center of mass of object, with respect to node's
-        coordinate frame.
-
-        Return:
-            (seq): Position coordinates (3 elements).
+        Kwargs:
+            other (NodePath): The node which the new state is set relative to.
+                              (default=self.getParent())
         """
-        ## TODO
-        pos = self.node().get
-        return pos
+        if other is None:
+            other = self.getParent()
+        pos = self.get_pos(other)
+        ts_com = TransformState.makePos(-Vec3(com))
+        for i in xrange(self.node().getNumShapes()):
+            # Compute the new transform.
+            mat = self.node().getShapeMat(i)
+            ts0 = TransformState.makeMat(mat)
+            ts = ts0.compose(ts_com)
+            # Change the transform.
+            shape = self.node().getShape(i)
+            self.node().removeShape(shape)
+            self.node().addShape(shape, ts)
+        # Change the object's shape
+        self.set_pos(other, com + pos)
+
+    # def get_center_of_mass(self):
+    #     """Return center of mass of object, with respect to node's
+    #     coordinate frame.
+
+    #     Return:
+    #         (seq): Position coordinates (3 elements).
+    #     """
+    #     pos = self.node().get
+    #     return pos
 
 
 class CPSO(RBSO):
