@@ -21,7 +21,7 @@ from panda3d.core import (BitMask32, Mat4, NodePathCollection, Point3,
 ##
 from scenesim.objects.sso import SSO
 ##
-from pdb import set_trace as BP
+from ipdb import set_trace as BP
 
 
 def cast_c_float(func):
@@ -461,19 +461,33 @@ class RBSO(PSO):
         """
         if other is None:
             other = self.getParent()
-        pos = self.get_pos(other)
-        ts_com = TransformState.makePos(-Vec3(com))
-        for i in xrange(self.node().getNumShapes()):
-            # Compute the new transform.
-            mat = self.node().getShapeMat(i)
-            ts0 = TransformState.makeMat(mat)
-            ts = ts0.compose(ts_com)
-            # Change the transform.
-            shape = self.node().getShape(i)
-            self.node().removeShape(shape)
-            self.node().addShape(shape, ts)
-        # Change the object's shape
+        pos = self.get_pos(other)  # Current node position.
+        # Move object position to new com.
         self.set_pos(other, com + pos)
+        ts_com = TransformState.makePos(-Vec3(com))  # New com transform.
+        # Read existing shape.
+        shape0 = self.get_shape()
+        if isinstance(shape0, str):
+            shape = [[shape0, (), ts_com]]
+        elif isinstance(shape0[0], str):
+            shape = [shape0, (), ts_com]
+        else:
+            shape = []
+            for s0 in shape0:
+                s = list(s0)
+                s[2] = s[2].compose(ts_com)
+                shape.append(s)
+        self.set_shape(shape)
+        # for i in xrange(self.node().getNumShapes()):
+        #     # Current shape transform.
+        #     mat = self.node().getShapeMat(i)
+        #     ts0 = TransformState.makeMat(mat)
+        #     # Compose current and new com transforms.
+        #     ts = ts0.compose(ts_com)
+        #     # Change the transform.
+        #     shape = self.node().getShape(i)
+        #     self.node().removeShape(shape)
+        #     self.node().addShape(shape, ts)
 
     # def get_center_of_mass(self):
     #     """Return center of mass of object, with respect to node's
