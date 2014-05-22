@@ -107,22 +107,21 @@ class BaseShape(list):
         """ Scales shape arguments."""
         pass
 
-    def shift(self, pos=(0, 0, 0), quat=(1, 0, 0, 0)):
+    def shift(self, pos=(0, 0, 0), quat=(1, 0, 0, 0), scale=(1, 1, 1)):
         """ Translate and rotate shape's transform."""
-        ones = Vec3(1, 1, 1)
-        T = TransformState.makePosQuatScale(pos, quat, ones)
+        T = TransformState.makePosQuatScale(pos, quat, scale)
         xform = T.compose(self[1])
         self[1] = xform
 
     def transform(self, node, other=None):
         """ Shift and scale the shape by node's transform."""
         if other is None:
-            other = node.getParent()
+            other = node.get_parent()
         scale = node.get_scale(other)
         pos = node.get_pos(other)
         quat = node.get_quat(other)
         self.scale(scale)
-        self.shift(pos=pos, quat=quat)
+        self.shift(pos=pos, quat=quat, scale=scale)
 
 
 class BoxShape(BaseShape):
@@ -442,12 +441,52 @@ class RBSO(PSO):
     @wraps(type_.set_into_collide_mask, assigned=("__name__", "__doc__"))
     def set_into_collide_mask(self, into_collide_mask):
         if isinstance(into_collide_mask, int):
-            into_collide_mask = BitMask32.bit(into_collide_mask)
+            into_collide_mask = BitMask32(into_collide_mask)
         self.node().set_into_collide_mask(into_collide_mask)
 
     @wraps(type_.get_into_collide_mask, assigned=("__name__", "__doc__"))
     def get_into_collide_mask(self):
-        return self.node().get_into_collide_mask()
+        return int(self.node().get_into_collide_mask().get_word())
+
+    # def set_center_of_mass(self, com, other=None):
+    #     """Sets center of mass of object.
+
+    #     Args:
+    #         pos (seq): Position coordinates (3 elements).
+
+    #     Kwargs:
+    #         other (NodePath): The node which the new state is set relative to.
+    #                           (default=self.getParent())
+    #     """
+    #     if other is None:
+    #         other = self.getParent()
+    #     pos = self.get_pos(other)  # Current node position.
+    #     # Move object position to new com.
+    #     self.set_pos(other, com + pos)
+    #     ts_com = TransformState.makePos(-Vec3(com))  # New com transform.
+    #     # Read existing shape.
+    #     shape0 = self.get_shape()
+    #     if isinstance(shape0, str):
+    #         shape = [[shape0, (), ts_com]]
+    #     elif isinstance(shape0[0], str):
+    #         shape = [shape0, (), ts_com]
+    #     else:
+    #         shape = []
+    #         for s0 in shape0:
+    #             s = list(s0)
+    #             s[2] = s[2].compose(ts_com)
+    #             shape.append(s)
+    #     self.set_shape(shape)
+    #     # for i in xrange(self.node().getNumShapes()):
+    #     #     # Current shape transform.
+    #     #     mat = self.node().getShapeMat(i)
+    #     #     ts0 = TransformState.makeMat(mat)
+    #     #     # Compose current and new com transforms.
+    #     #     ts = ts0.compose(ts_com)
+    #     #     # Change the transform.
+    #     #     shape = self.node().getShape(i)
+    #     #     self.node().removeShape(shape)
+    #     #     self.node().addShape(shape, ts)
 
     def set_center_of_mass(self, com, other=None):
         """Sets center of mass of object.
@@ -462,32 +501,24 @@ class RBSO(PSO):
         if other is None:
             other = self.getParent()
         pos = self.get_pos(other)  # Current node position.
+        # Read existing shape.
+        shapes = []
+        shapes0 = ShapeList(self.get_shape())
+        for shape0 in shapes0:
+            name = shape0.name
+            args0, xform0 = shape0
+            if name != "Box":
+                print("Can't handle that shape: %s" % name)
+                BP()
+            shape = ShapeManager.make1((name, args0, xform0))
+            # shape.transform(self, other=self)
+            shape.shift(pos=-com)
+            s = (name, shape[0], shape[1])
+            shapes.append(s)
+        # Set compound object's shapes tag.
+        self.set_shape(shapes)
         # Move object position to new com.
         self.set_pos(other, com + pos)
-        ts_com = TransformState.makePos(-Vec3(com))  # New com transform.
-        # Read existing shape.
-        shape0 = self.get_shape()
-        if isinstance(shape0, str):
-            shape = [[shape0, (), ts_com]]
-        elif isinstance(shape0[0], str):
-            shape = [shape0, (), ts_com]
-        else:
-            shape = []
-            for s0 in shape0:
-                s = list(s0)
-                s[2] = s[2].compose(ts_com)
-                shape.append(s)
-        self.set_shape(shape)
-        # for i in xrange(self.node().getNumShapes()):
-        #     # Current shape transform.
-        #     mat = self.node().getShapeMat(i)
-        #     ts0 = TransformState.makeMat(mat)
-        #     # Compose current and new com transforms.
-        #     ts = ts0.compose(ts_com)
-        #     # Change the transform.
-        #     shape = self.node().getShape(i)
-        #     self.node().removeShape(shape)
-        #     self.node().addShape(shape, ts)
 
     # def get_center_of_mass(self):
     #     """Return center of mass of object, with respect to node's
@@ -527,7 +558,6 @@ class CPSO(RBSO):
 
     def _compute_shapes(self):
         """ Computes shapes from self.components."""
-        # Compute mass and center-of-mass.
         masses = []
         poses = []
         psos = self.descendants(depths=[1], type_=PSO)
@@ -558,11 +588,6 @@ class CPSO(RBSO):
                     BP()
                 shape = ShapeManager.make1((name, args0, xform0))
                 shape.transform(pso, other=self)
-                # scale = pso.get_scale(self)
-                # pos = pso.get_pos(self)
-                # quat = pso.get_quat(self)
-                # shape.scale(scale)
-                # shape.shift(pos, quat)
                 val = (name, shape[0], shape[1])
                 vals.append(val)
         # Set compound object's shapes tag.
