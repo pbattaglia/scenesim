@@ -594,7 +594,7 @@ def test_boxshape_transform():
     rbso.set_pos(pos)
     rbso.set_quat(quat)
     S0.transform(rbso)
-    T = TransformState.makePosQuatScale(pos, quat, ones)
+    T = TransformState.makePosQuatScale(pos, quat, scale)
     assert S0[0][0] == Vec3(*imap(mul, args, scale))
     assert S0[1] == T
 
