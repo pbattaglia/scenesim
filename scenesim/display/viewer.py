@@ -9,6 +9,7 @@ Viewer for SSOs.
 ##
 from math import radians, tan
 import sys
+import signal
 ##
 from direct.showbase.ShowBase import ShowBase
 from numpy import array
@@ -29,6 +30,13 @@ from scenesim.physics.bulletbase import BulletBase
 from pdb import set_trace as BP
 
 
+class Timeout(Exception):
+    # Register an handler for the timeout
+    @classmethod
+    def handler(cls, signum, frame):
+        raise cls
+
+    
 class Viewer(ShowBase, object):
     """ Viewer for SSOs."""
 
@@ -454,11 +462,19 @@ class Viewer(ShowBase, object):
         elapsed = current_time - self.start_time
         return elapsed
 
-    def run(self):
+    def run(self, t=None):
         # Start with first sso.
         self.goto_sso(0)
+        if t is not None:
+            # Set timeout.
+            signal.signal(signal.SIGALRM, Timeout.handler)
+            # Define a timeout for your function
+            signal.alarm(t)
         # Call parent's run().
-        ShowBase.run(self)
+        try:
+            ShowBase.run(self)
+        except Timeout:
+            self.exit()
 
     def exit(self):
         """ Stuff to do before exiting."""
@@ -490,6 +506,13 @@ def load(args):
 if __name__ == "__main__":
     # Command line arguments.
     args = sys.argv[1:]
+    try:
+        i = args.index('-t')
+    except ValueError:
+        t = None
+    else:
+        t = int(args.pop(i + 1))
+        del args[i]        
     # Setup Bullet physics.
     bbase = setup_bullet()
     # Parse the input arguments and load the ssos.
@@ -499,4 +522,4 @@ if __name__ == "__main__":
     app.init_physics(bbase)
     app.init_ssos(ssos)
     # ShowBase's run() starts all the core tasks like graphics etc
-    app.run()
+    app.run(t)

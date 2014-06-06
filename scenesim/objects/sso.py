@@ -17,13 +17,21 @@ from scenesim.util import combomethod
 
 
 class SSO(NodePath):
-    """ Subclass of NodePath with SSO-specific functionality."""
+    """ Subclass of NodePath with SceneSim-specific functionality."""
 
     type_ = PandaNode
     _prop_tags = ("pos", "quat", "scale", "name")
     _res_tags = ()
 
     def __init__(self, *args, **kwargs):
+        """
+        Args:
+            NodePath positional arguments
+
+        Kwargs:
+            props (dict): Properties dictionary.
+            other (NodePath): Node whose coordinates to use for properties.
+        """
         props = kwargs.pop("props", {})
         other = kwargs.pop("other", {})
         if len(args) == 0:
