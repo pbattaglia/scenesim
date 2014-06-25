@@ -82,7 +82,7 @@ class Viewer(ShowBase, object):
         self.camLens = lens
         self.camLens.setNearFar(0.01, 1000.0)
         setlens = ConfigVariableBool('viewer-set-cam-lens', '#t')
-        if setlens:
+        if setlens.getValue():
             self.cam.node().setLens(self.camLens)
         #
         # Initialize / set variables
