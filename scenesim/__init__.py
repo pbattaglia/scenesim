@@ -10,3 +10,9 @@ if config_pth.isfile():
     cp = Filename.fromOsSpecific(config_pth)
     cp.makeTrueCase()
     loadPrcFile(cp)
+
+    
+from panda3d.core import ConfigVariableString
+ 
+x = ConfigVariableString('model-path')
+print('MODEL PATH: ', x.getValue())
