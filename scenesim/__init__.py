@@ -14,5 +14,5 @@ if config_pth.isfile():
     
 from panda3d.core import ConfigVariableString
  
-x = ConfigVariableString('model-path')
-print('MODEL PATH: ', x.getValue())
+x = ConfigVariableString('enforce-attrib-lock')
+print('Config.prc stuff: ', x.getValue())
