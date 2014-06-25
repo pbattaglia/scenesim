@@ -65,7 +65,7 @@ class Viewer(ShowBase, object):
         self.lights.reparentTo(self.render)
         # Set auto shading for shadows
         use_shaders = ConfigVariableBool('viewer-use-shaders', '#t')
-        if use_shaders.getValue():
+        if use_shaders:
             self.render.setShaderAuto()
         # Set antialiasing on
         self.render.setAntialias(AntialiasAttrib.MAuto)

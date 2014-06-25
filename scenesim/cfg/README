@@ -1,0 +1,1 @@
+Do not edit Config0.prc because it is part of the source. Instead, create Config.prc with your custom settings, and scenesim will only read that. If not present, it falls back on Config0.prc. It only loads one, so be sure to include anything from Config0.prc in Config.prc.
