@@ -1,5 +1,7 @@
 ## Custom Panda3d configuration variables.
 
+model-path $THIS_PRC_DIR/../../resources/egg
+
 enforce-attrib-lock 0
 # Prevents Bullet memory leaks 
 # (see: http://www.panda3d.org/forums/viewtopic.php?t=15645)
