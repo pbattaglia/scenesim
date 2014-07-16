@@ -448,46 +448,6 @@ class RBSO(PSO):
     def get_into_collide_mask(self):
         return int(self.node().get_into_collide_mask().get_word())
 
-    # def set_center_of_mass(self, com, other=None):
-    #     """Sets center of mass of object.
-
-    #     Args:
-    #         pos (seq): Position coordinates (3 elements).
-
-    #     Kwargs:
-    #         other (NodePath): The node which the new state is set relative to.
-    #                           (default=self.getParent())
-    #     """
-    #     if other is None:
-    #         other = self.getParent()
-    #     pos = self.get_pos(other)  # Current node position.
-    #     # Move object position to new com.
-    #     self.set_pos(other, com + pos)
-    #     ts_com = TransformState.makePos(-Vec3(com))  # New com transform.
-    #     # Read existing shape.
-    #     shape0 = self.get_shape()
-    #     if isinstance(shape0, str):
-    #         shape = [[shape0, (), ts_com]]
-    #     elif isinstance(shape0[0], str):
-    #         shape = [shape0, (), ts_com]
-    #     else:
-    #         shape = []
-    #         for s0 in shape0:
-    #             s = list(s0)
-    #             s[2] = s[2].compose(ts_com)
-    #             shape.append(s)
-    #     self.set_shape(shape)
-    #     # for i in xrange(self.node().getNumShapes()):
-    #     #     # Current shape transform.
-    #     #     mat = self.node().getShapeMat(i)
-    #     #     ts0 = TransformState.makeMat(mat)
-    #     #     # Compose current and new com transforms.
-    #     #     ts = ts0.compose(ts_com)
-    #     #     # Change the transform.
-    #     #     shape = self.node().getShape(i)
-    #     #     self.node().removeShape(shape)
-    #     #     self.node().addShape(shape, ts)
-
     def set_center_of_mass(self, com, other=None):
         """Sets center of mass of object.
 
@@ -636,28 +596,3 @@ class GHSO(PSO):
     @wraps(type_.get_overlapping_nodes, assigned=("__name__", "__doc__"))
     def get_overlapping_nodes(self):
         return self.node().get_overlapping_nodes()
-
-
-## TODO
-#
-
-
-
-# class A(object):
-#     def __init__(self):
-#         print "A.__init__()"
-# class AA(A):
-#     def __init__(self):
-#         print "AA.__init__()"
-# class B(AA):
-#     def __init__(self):
-#         print "B.__init__()"
-#         super(B, self).__init__()
-# class C(AA):
-#     def __init__(self):
-#         print "C.__init__()"
-#         super(C, self).__init__()
-# class D(C, B):
-#     pass
-# d = D()
-# print D.mro()
