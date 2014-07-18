@@ -20,7 +20,7 @@ setup(name="scenesim",
                         "numpydoc>=0.4",
                         "path.py>=5.0",
                         "sphinxcontrib-napoleon>=0.2.1",
-                        "Polygon2",
+                        # "Polygon2",
                         # "https://bitbucket.org/jraedler/polygon2/downloads/Polygon2-2.0.6.zip",
                     ],
       provides=["scenesim"])

@@ -5,5 +5,6 @@ numpy>=1.8.0
 numpydoc>=0.4
 path.py>=5.0
 sphinxcontrib-napoleon>=0.2.1
-https://bitbucket.org/jraedler/polygon2/downloads/Polygon2-2.0.6.zip
+## Install Polygon2 manually
+# https://bitbucket.org/jraedler/polygon2/downloads/Polygon2-2.0.6.zip
 ## Install Panda3d manually.
