@@ -52,7 +52,7 @@ class Viewer(ShowBase, object):
         # Spotlight. Casts shadows.
         slight = Spotlight("slight")
         slight.setScene(self.render)
-        slight.setShadowCaster(True, 2 ** 11, 2 ** 11)
+        slight.setShadowCaster(True, 2 ** 13, 2 ** 13)
         # Set shadow mask, so we can exclude objects from casting shadows
         self.shadow_mask = BitMask32.bit(2)
         slight.setCameraMask(self.shadow_mask)
