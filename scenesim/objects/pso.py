@@ -21,7 +21,7 @@ from panda3d.core import (BitMask32, Mat4, NodePathCollection, Point3,
 ##
 from scenesim.objects.sso import SSO
 ##
-from ipdb import set_trace as BP
+from pdb import set_trace as BP
 
 
 def cast_c_float(func):
