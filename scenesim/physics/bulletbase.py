@@ -295,7 +295,7 @@ class BulletBase(object):
             # The body was not a rigid body (it didn't have
             # setLinearFactor method).
             pass
-
+            
     def set_axis_constraint(self, axis, on, disp=None):
         """Sets an axis constraint, so that bodies can/cannot
         move in that direction.
@@ -308,7 +308,7 @@ class BulletBase(object):
             disp (float): Displacement from 0.
         """
         # Create the constraint vector.
-        self.axis_constraint_fac[axis] = int(not on)
+        self.axis_constraint_fac[axis] = int(on)
         self.axis_constraint_disp[axis] = disp if disp is not None else nan
         # Iterate over bodies, applying the constraint.
         for body in self.bodies:
