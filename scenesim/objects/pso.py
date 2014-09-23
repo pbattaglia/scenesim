@@ -441,12 +441,12 @@ class RBSO(PSO):
     @wraps(type_.set_into_collide_mask, assigned=("__name__", "__doc__"))
     def set_into_collide_mask(self, into_collide_mask):
         if isinstance(into_collide_mask, int):
-            into_collide_mask = BitMask32(into_collide_mask)
+            into_collide_mask = BitMask32.bit(into_collide_mask)
         self.node().set_into_collide_mask(into_collide_mask)
 
     @wraps(type_.get_into_collide_mask, assigned=("__name__", "__doc__"))
     def get_into_collide_mask(self):
-        return int(self.node().get_into_collide_mask().get_word())
+        return int(np.log2(self.node().get_into_collide_mask().get_word()))
 
     def set_center_of_mass(self, com, other=None):
         """Sets center of mass of object.
