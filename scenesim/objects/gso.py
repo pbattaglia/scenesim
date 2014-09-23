@@ -38,7 +38,7 @@ class GSO(SSO):
     @wraps(SSO.get_color, assigned=("__name__", "__doc__"))
     def get_color(self):
         if not self.hasColor():
-            self.set_color(0, 0, 0, 1)
+            self.set_color(1, 1, 1, 1)
         return super(SSO, self).get_color()
 
     def set_model(self, model):
